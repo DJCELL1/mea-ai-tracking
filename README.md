@@ -1,6 +1,6 @@
-# new-project
+# Mea AI Tracking
 
-A blank Python starter.
+Python project for Mea AI Tracking.
 
 ## Setup
 
@@ -13,7 +13,7 @@ pip install -e ".[dev]"
 ## Run
 
 ```bash
-python -m new_project
+python -m mea_ai_tracking
 ```
 
 ## Test

@@ -1,4 +1,4 @@
-from new_project.core import greet
+from mea_ai_tracking.core import greet
 
 
 def test_greet():
