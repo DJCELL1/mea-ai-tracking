@@ -7,7 +7,26 @@ import { useToast } from '../components/Toast';
 import { api, errorMessage } from '../lib/api';
 import { fmt } from '../lib/format';
 
-type TargetForm = Pick<SettingsDto, 'kcalTarget' | 'proteinGTarget' | 'carbsGTarget' | 'fatGTarget' | 'closeAlertPct' | 'proteinNudgeTime' | 'proteinNudgePct' | 'timezone'>;
+type TargetForm = Pick<
+  SettingsDto,
+  | 'kcalTarget'
+  | 'proteinGTarget'
+  | 'carbsGTarget'
+  | 'fatGTarget'
+  | 'closeAlertPct'
+  | 'proteinNudgeTime'
+  | 'proteinNudgePct'
+  | 'timezone'
+  | 'windowStart'
+  | 'windowEnd'
+  | 'windowCloseWarningMin'
+  | 'fastingGoalHours'
+  | 'notifyWindowOpen'
+  | 'notifyWindowClosing'
+  | 'notifyWindowClosed'
+  | 'notifyProtein'
+  | 'notifyTargets'
+>;
 type Nullable<T> = { [K in keyof T]: T[K] extends number ? number | null : T[K] };
 
 const AU_ZONES = [
@@ -31,8 +50,7 @@ export function Settings() {
 
   useEffect(() => {
     if (me && !form) {
-      const { kcalTarget, proteinGTarget, carbsGTarget, fatGTarget, closeAlertPct, proteinNudgeTime, proteinNudgePct, timezone } = me.settings;
-      setForm({ kcalTarget, proteinGTarget, carbsGTarget, fatGTarget, closeAlertPct, proteinNudgeTime, proteinNudgePct, timezone });
+      setForm({ ...me.settings });
     }
   }, [me, form]);
 
@@ -47,6 +65,16 @@ export function Settings() {
     if (!form) return;
     const missing = (Object.entries(form) as [string, unknown][]).filter(([, v]) => v == null || v === '');
     if (missing.length) return setError('Fill in every field');
+    const range = (v: number | null, lo: number, hi: number) => v != null && v >= lo && v <= hi;
+    const problems = [
+      !range(form.kcalTarget, 500, 10000) && 'Energy target must be 500–10,000 kcal',
+      !range(form.closeAlertPct, 50, 100) && '"Getting close" must be 50–100%',
+      !range(form.proteinNudgePct, 0, 100) && 'Protein nudge must be 0–100%',
+      !range(form.windowCloseWarningMin, 0, 240) && '"Closing soon" warning must be 0–240 minutes',
+      !range(form.fastingGoalHours, 0, 72) && 'Fasting goal must be 0–72 hours',
+      form.windowStart >= form.windowEnd && 'The eating window must close after it opens (same day)',
+    ].filter(Boolean);
+    if (problems.length) return setError(problems.join('. ') + '.');
     setBusy(true);
     setError(null);
     try {
@@ -59,8 +87,10 @@ export function Settings() {
         fatGTarget: round(form.fatGTarget),
         closeAlertPct: round(form.closeAlertPct),
         proteinNudgePct: round(form.proteinNudgePct),
+        windowCloseWarningMin: round(form.windowCloseWarningMin),
+        fastingGoalHours: form.fastingGoalHours,
       });
-      await qc.invalidateQueries({ queryKey: keys.me });
+      await Promise.all([qc.invalidateQueries({ queryKey: keys.me }), qc.invalidateQueries({ queryKey: ['fasting'] }), qc.invalidateQueries({ queryKey: ['log'] })]);
       toast('Settings saved');
     } catch (err) {
       setError(errorMessage(err));
@@ -138,6 +168,50 @@ export function Settings() {
         </section>
 
         <section className="card stack">
+          <h2>Eating window</h2>
+          <div className="grid-2">
+            <label className="field">
+              <span>Opens</span>
+              <input className="input" type="time" required value={form.windowStart} onChange={(e) => set('windowStart')(e.target.value)} />
+            </label>
+            <label className="field">
+              <span>Closes</span>
+              <input className="input" type="time" required value={form.windowEnd} onChange={(e) => set('windowEnd')(e.target.value)} />
+            </label>
+          </div>
+          <div className="grid-2">
+            <label className="field">
+              <span>"Closing soon" warning (min before)</span>
+              <NumberInput value={form.windowCloseWarningMin} onChange={set('windowCloseWarningMin')} />
+            </label>
+            <label className="field">
+              <span>Fasting goal (hours)</span>
+              <NumberInput value={form.fastingGoalHours} onChange={set('fastingGoalHours')} />
+            </label>
+          </div>
+          <div className="small muted">Change the window for a single day on the Fasting screen (tap the FASTING/EATING card on Today).</div>
+        </section>
+
+        <section className="card stack">
+          <h2>Notifications</h2>
+          {(
+            [
+              ['notifyWindowOpen', 'Eating window opens'],
+              ['notifyWindowClosing', `Window closing soon (${form.windowCloseWarningMin ?? 30} min before)`],
+              ['notifyWindowClosed', 'Eating window closed'],
+              ['notifyProtein', 'Protein nudge'],
+              ['notifyTargets', 'Getting close / over targets'],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key} className="switch">
+              <span>{label}</span>
+              <input type="checkbox" checked={form[key]} onChange={(e) => set(key)(e.target.checked)} />
+            </label>
+          ))}
+          <div className="small muted">Phone notifications get switched on in the next update. These choices are saved now.</div>
+        </section>
+
+        <section className="card stack">
           <h2>Day</h2>
           <label className="field">
             <span>Timezone (when your day starts and ends)</span>
@@ -156,8 +230,6 @@ export function Settings() {
           Save settings
         </button>
       </form>
-
-      <div className="banner small muted">Your eating window and notifications will be set here (phases 4–5).</div>
 
       <section className="card stack small muted">
         <strong style={{ color: 'var(--text)' }}>Install on your phone</strong>

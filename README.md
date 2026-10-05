@@ -3,9 +3,9 @@
 Personal kilojoule/calorie and macro tracker, built as an installable Progressive Web App.
 Node + Express + TypeScript API, React (Vite) front end, PostgreSQL. Deployed on Railway.
 
-> **Status:** Phase 3 of 6 done — food database import, login, fuzzy search, logging, custom foods,
-> recipes/saved meals, copy day, the installable PWA, and daily targets with progress rings and alerts.
-> Fasting window, history and notifications, and the Railway deploy follow.
+> **Status:** Phase 4 of 6 done — food database import, login, fuzzy search, logging, custom foods,
+> recipes/saved meals, copy day, the installable PWA, daily targets with progress rings and alerts,
+> and the fasting window. History, charts and push notifications, then the Railway deploy, follow.
 
 ## Project layout
 
@@ -159,6 +159,12 @@ If a source gives kcal but not kJ, kJ is calculated automatically, and vice vers
   you're under 50% of your protein target, suggesting high-protein foods you often eat with your
   usual amounts (or everyday Australian staples until you have history). Banners can be
   dismissed for the day.
+- **Fasting window:** set your everyday eating window in Settings (e.g. 12 pm–8 pm) and change any
+  single day, or make it a fast day, on the Fasting screen. Today shows **FASTING** or **EATING** with
+  a countdown to when the window opens or closes, and warns when it's about to close (30 min by
+  default). Food logged outside the window is allowed but flagged. The Fasting screen shows hours
+  fasted per day (last food → first food the next day) against your goal (16 h by default), your
+  current and longest streak, and your average. Windows run within one day (opening before closing).
 - **My foods:** add foods from a nutrition label (per serve or per 100 g, kJ or kcal); build
   **recipes** (logged by portion, searchable like any food) and **saved meals** (logged as
   separate items in one tap).

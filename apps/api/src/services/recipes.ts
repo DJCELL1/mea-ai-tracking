@@ -5,6 +5,7 @@ import { foods, foodServings, foodSources, logEntries, recipeItems, recipes } fr
 import { badRequest, notFound } from '../http.js';
 import { ensureSource } from '../import/upsert.js';
 import { hydrate } from './foods.js';
+import { refreshOutsideWindow } from './fasting.js';
 import { defaultEatenAt, logFood } from './log.js';
 
 export interface RecipeInput {
@@ -167,5 +168,6 @@ export async function logRecipe(db: Db, userId: number, timeZone: string, id: nu
       })),
     )
     .returning({ id: logEntries.id });
+  await refreshOutsideWindow(db, userId, date, date);
   return rows;
 }

@@ -8,6 +8,13 @@
       "when": 1791160176423,
       "tag": "0000_init",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791162243948,
+      "tag": "0001_drop_fasting_days",
+      "breakpoints": true
     }
   ]
 }

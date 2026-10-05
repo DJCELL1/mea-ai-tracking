@@ -267,3 +267,19 @@ textarea.input { padding: 12px 14px; min-height: 80px; }
 .kcal-big { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
 .spinner { width: 22px; height: 22px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 24px auto; }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---------- Fasting ---------- */
+.fast-card { display: flex; align-items: center; gap: 14px; text-decoration: none; }
+.fast-state { font-size: 1.6rem; font-weight: 900; letter-spacing: 0.08em; }
+.fast-state.eating { color: var(--accent); }
+.fast-state.fasting { color: var(--text); }
+.fast-icon { width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; flex: none; background: var(--surface-2); }
+.fast-icon.eating { background: color-mix(in srgb, var(--accent) 20%, var(--surface)); }
+.countdown { font-size: 1.15rem; font-weight: 700; }
+.hbar { height: 10px; border-radius: 5px; background: var(--surface-2); overflow: hidden; position: relative; }
+.hbar > i { display: block; height: 100%; border-radius: 5px; }
+.hbar .goal { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--muted); }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.stat-grid .num { font-size: 1.4rem; font-weight: 800; }
+.switch { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: var(--tap); }
+.switch input { width: 22px; height: 22px; accent-color: var(--accent); }

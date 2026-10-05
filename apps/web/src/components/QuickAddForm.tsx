@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useInvalidate } from '../api/hooks';
 import { api, errorMessage } from '../lib/api';
 import { MEAL_LABELS } from '../lib/format';
+import { OutsideWindowNotice } from './FastingCard';
 import { MealPicker } from './MealPicker';
 import { NumberInput } from './NumberInput';
 import { useToast } from './Toast';
@@ -39,10 +40,9 @@ export function QuickAddForm({ date, meal: initialMeal, entry, onDone }: { date:
       fatG: fat,
     };
     try {
-      if (entry) await api.patch(`/log/${entry.id}`, body);
-      else await api.post('/log/quick', { ...body, date });
+      const saved = entry ? await api.patch<LogEntryDto>(`/log/${entry.id}`, body) : await api.post<LogEntryDto>('/log/quick', { ...body, date });
       await inv.log();
-      toast(entry ? 'Updated' : `Added to ${MEAL_LABELS[meal].toLowerCase()}`);
+      toast(entry ? 'Updated' : saved.outsideWindow ? 'Added, outside your eating window' : `Added to ${MEAL_LABELS[meal].toLowerCase()}`);
       if (!entry) {
         setName('');
         setEnergy(null);
@@ -119,6 +119,7 @@ export function QuickAddForm({ date, meal: initialMeal, entry, onDone }: { date:
         <span>Meal</span>
         <MealPicker value={meal} onChange={setMeal} />
       </div>
+      {!entry && <OutsideWindowNotice date={date} />}
       {error && <div className="banner error">{error}</div>}
       <button className="btn btn-primary btn-block" disabled={busy}>
         {entry ? 'Save' : `Add to ${MEAL_LABELS[meal]}`}

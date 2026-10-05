@@ -1,5 +1,5 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { localDate, type DayLogDto, type FoodDto, type FoodSearchResponse, type LogEntryDto, type Meal, type MeDto, type RecipeDto } from '@mea/shared';
+import { fastingStatus, localDate, type DayLogDto, type EatingWindow, type FastingHistory, type WindowOverride, type FoodDto, type FoodSearchResponse, type LogEntryDto, type Meal, type MeDto, type RecipeDto } from '@mea/shared';
 import { useEffect, useState } from 'react';
 import { api } from '../lib/api';
 
@@ -70,6 +70,7 @@ export function useInvalidate() {
         qc.invalidateQueries({ queryKey: ['log'] }),
         qc.invalidateQueries({ queryKey: ['search'] }),
         qc.invalidateQueries({ queryKey: ['suggestions'] }),
+        qc.invalidateQueries({ queryKey: ['fasting'] }),
       ]),
     foods: () =>
       Promise.all([
@@ -107,4 +108,42 @@ export function useUpdateEntry() {
 export function useDeleteEntry() {
   const inv = useInvalidate();
   return useMutation({ mutationFn: (id: number) => api.del(`/log/${id}`), onSuccess: inv.log });
+}
+
+export interface FastingOverview {
+  today: string;
+  windows: (Omit<EatingWindow, 'start' | 'end'> & { start: string; end: string })[];
+  overrides: WindowOverride[];
+  lastFoodAt: string | null;
+  defaults: { windowStart: string; windowEnd: string; windowCloseWarningMin: number; fastingGoalHours: number };
+}
+
+export function useFasting() {
+  return useQuery({ queryKey: ['fasting'], queryFn: () => api.get<FastingOverview>('/fasting'), staleTime: 60_000, refetchInterval: 5 * 60_000 });
+}
+
+export function useFastingHistory(days: number) {
+  return useQuery({ queryKey: ['fasting', 'history', days], queryFn: () => api.get<FastingHistory>(`/fasting/history?days=${days}`) });
+}
+
+/** Re-render on an interval (for countdowns). */
+export function useNow(intervalMs = 15_000) {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
+/** Live eating/fasting status. */
+export function useFastingNow(intervalMs = 15_000) {
+  const { data } = useFasting();
+  const now = useNow(intervalMs);
+  if (!data) return null;
+  const windows = data.windows.map((w) => ({ ...w, start: new Date(w.start), end: new Date(w.end) }));
+  const status = fastingStatus(now, windows);
+  const msLeft = status.changesAt ? status.changesAt.getTime() - now.getTime() : null;
+  const closingSoon = status.state === 'eating' && msLeft != null && msLeft <= data.defaults.windowCloseWarningMin * 60_000;
+  return { ...status, now, msLeft, closingSoon, lastFoodAt: data.lastFoodAt ? new Date(data.lastFoodAt) : null, overview: data };
 }

@@ -3,6 +3,9 @@ import { isValidTimeZone } from '@mea/shared';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
 import { uid } from '../auth/session.js';
+import { addDays, localDate } from '@mea/shared';
+import { badRequest } from '../http.js';
+import { refreshOutsideWindow } from '../services/fasting.js';
 import { getSettings, updateSettings } from '../services/settings.js';
 import { proteinSuggestions } from '../services/suggestions.js';
 
@@ -39,7 +42,19 @@ export function settingsRouter(db: Db) {
   });
 
   r.put('/settings', async (req, res) => {
-    res.json(await updateSettings(db, uid(req), settingsBody.parse(req.body)));
+    const patch = settingsBody.parse(req.body);
+    const current = await getSettings(db, uid(req));
+    const start = patch.windowStart ?? current.windowStart;
+    const end = patch.windowEnd ?? current.windowEnd;
+    if (start >= end) throw badRequest('The eating window must close after it opens (same day)');
+    const updated = await updateSettings(db, uid(req), patch);
+    const windowChanged = start !== current.windowStart || end !== current.windowEnd || updated.timezone !== current.timezone;
+    if (windowChanged) {
+      // Re-flag recent entries against the new default window
+      const today = localDate(new Date(), updated.timezone);
+      await refreshOutsideWindow(db, uid(req), addDays(today, -90), addDays(today, 1));
+    }
+    res.json(updated);
   });
 
   r.get('/suggestions/protein', async (req, res) => {

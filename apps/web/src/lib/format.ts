@@ -41,3 +41,15 @@ export function amountLabel(e: { grams: number | null; servingLabel: string | nu
   if (e.servingLabel && e.servingQty != null) return `${fmt(e.servingQty, 2)} × ${e.servingLabel} (${g(e.grams)})`;
   return e.grams != null ? g(e.grams) : '';
 }
+
+/** "12:00 pm" in the given timezone. */
+export function clock(d: Date, timeZone: string): string {
+  return d.toLocaleTimeString('en-AU', { hour: 'numeric', minute: '2-digit', timeZone });
+}
+
+/** "12:00" (HH:MM) → "12:00 pm" */
+export function hhmmLabel(t: string): string {
+  const [h, m] = t.split(':').map(Number);
+  const suffix = h >= 12 ? 'pm' : 'am';
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${suffix}`;
+}

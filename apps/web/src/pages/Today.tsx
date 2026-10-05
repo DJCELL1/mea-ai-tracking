@@ -5,6 +5,7 @@ import { useDayLog, useInvalidate, useMe, useToday } from '../api/hooks';
 import { AlertBanners } from '../components/AlertBanners';
 import { TargetsCard } from '../components/TargetsCard';
 import { AmountSheet } from '../components/AmountSheet';
+import { FastingCard } from '../components/FastingCard';
 import { MacroLine } from '../components/MacroLine';
 import { QuickAddForm } from '../components/QuickAddForm';
 import { Sheet } from '../components/Sheet';
@@ -43,6 +44,11 @@ export function Today() {
 
       {day && (
         <>
+          {date === today && (
+            <div style={{ marginBottom: 12 }}>
+              <FastingCard timeZone={me.settings.timezone} />
+            </div>
+          )}
           <AlertBanners totals={day.totals} settings={me.settings} date={date} />
           <TargetsCard totals={day.totals} settings={me.settings} />
 
@@ -90,6 +96,7 @@ function MealSection({ meal, date, entries, kcal, onEdit }: { meal: Meal; date: 
                     {(amountLabel(e) || (e.entryType === 'quick_add' && e.name !== 'Quick add')) && (e.proteinG != null || e.carbsG != null || e.fatG != null) && ' · '}
                     <MacroLine n={e} className="" />
                   </div>
+                  {e.outsideWindow && <div className="small" style={{ color: 'var(--warn)' }}>⏱ Outside eating window</div>}
                 </div>
                 <div className="num" style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 600 }}>{fmt(e.energyKcal)}</div>

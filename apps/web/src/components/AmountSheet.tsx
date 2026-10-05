@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDeleteEntry, useFood, useLogFood, useUpdateEntry } from '../api/hooks';
 import { errorMessage } from '../lib/api';
 import { energy, fmt, MEAL_LABELS } from '../lib/format';
+import { OutsideWindowNotice } from './FastingCard';
 import { MacroLine } from './MacroLine';
 import { MealPicker } from './MealPicker';
 import { NumberInput } from './NumberInput';
@@ -98,8 +99,8 @@ export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealPro
         await update.mutateAsync({ id: entry.id, meal, ...amount });
         toast('Updated');
       } else if (food) {
-        await logFood.mutateAsync({ date, meal, foodId: food.id, ...amount });
-        toast(`Added to ${MEAL_LABELS[meal].toLowerCase()}`);
+        const logged = await logFood.mutateAsync({ date, meal, foodId: food.id, ...amount });
+        toast(logged.outsideWindow ? `Added, outside your eating window` : `Added to ${MEAL_LABELS[meal].toLowerCase()}`);
         onLogged?.();
       }
       onClose();
@@ -184,6 +185,7 @@ export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealPro
           </div>
         )}
 
+        {!entry && <OutsideWindowNotice date={date} />}
         {error && <div className="banner error">{error}</div>}
 
         <button type="button" className="btn btn-primary btn-block" disabled={busy} onClick={save}>

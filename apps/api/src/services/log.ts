@@ -18,6 +18,7 @@ import {
 import type { Db } from '../db/client.js';
 import { foods, foodServings, logEntries } from '../db/schema.js';
 import { badRequest, notFound } from '../http.js';
+import { isOutsideWindow, refreshOutsideWindow } from './fasting.js';
 import { getFood, nutrientsOf } from './foods.js';
 
 type EntryRow = typeof logEntries.$inferSelect;
@@ -93,13 +94,15 @@ export interface FoodEntryInput extends AmountInput {
 export async function logFood(db: Db, userId: number, timeZone: string, input: FoodEntryInput): Promise<LogEntryDto> {
   const food = await getFood(db, userId, input.foodId);
   const amount = await resolveAmount(db, food.id, input);
+  const eatenAt = input.eatenAt ?? defaultEatenAt(input.date, input.meal, timeZone);
   const [row] = await db
     .insert(logEntries)
     .values({
       userId,
       logDate: input.date,
       meal: input.meal,
-      eatenAt: input.eatenAt ?? defaultEatenAt(input.date, input.meal, timeZone),
+      eatenAt,
+      outsideWindow: await isOutsideWindow(db, userId, input.date, eatenAt),
       foodId: food.id,
       name: food.name,
       grams: amount.grams,
@@ -133,13 +136,15 @@ export function bothEnergies(kcal?: number | null, kj?: number | null) {
 
 export async function quickAdd(db: Db, userId: number, timeZone: string, input: QuickAddInput): Promise<LogEntryDto> {
   if (input.energyKcal == null && input.energyKj == null) throw badRequest('Quick add needs kcal or kJ');
+  const eatenAt = input.eatenAt ?? defaultEatenAt(input.date, input.meal, timeZone);
   const [row] = await db
     .insert(logEntries)
     .values({
       userId,
       logDate: input.date,
       meal: input.meal,
-      eatenAt: input.eatenAt ?? defaultEatenAt(input.date, input.meal, timeZone),
+      eatenAt,
+      outsideWindow: await isOutsideWindow(db, userId, input.date, eatenAt),
       name: input.name?.trim() || 'Quick add',
       entryType: 'quick_add',
       ...bothEnergies(input.energyKcal, input.energyKj),
@@ -208,6 +213,7 @@ export async function updateEntry(db: Db, userId: number, id: number, patch: Ent
     servingLabel = s?.label ?? null;
   }
 
+  if (patch.date || patch.eatenAt) set.outsideWindow = await isOutsideWindow(db, userId, set.logDate ?? e.logDate, set.eatenAt ?? e.eatenAt);
   const [row] = await db.update(logEntries).set(set).where(eq(logEntries.id, id)).returning();
   return toEntryDto(row, servingLabel);
 }
@@ -242,5 +248,6 @@ export async function copyDay(
       entryType: rest.entryType === 'quick_add' ? ('quick_add' as const) : ('copied' as const),
     })),
   );
+  await refreshOutsideWindow(db, userId, toDate, toDate);
   return source.length;
 }

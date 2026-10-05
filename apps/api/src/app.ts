@@ -6,6 +6,7 @@ import type { Db } from './db/client.js';
 import { errorHandler, notFound } from './http.js';
 import { loadSession, requireAuth, requireCustomHeader, type SessionConfig } from './auth/session.js';
 import { authRouter } from './routes/auth.js';
+import { fastingRouter } from './routes/fasting.js';
 import { foodsRouter } from './routes/foods.js';
 import { logRouter } from './routes/log.js';
 import { recipesRouter } from './routes/recipes.js';
@@ -47,6 +48,7 @@ export function createApp({ db, session, webDist }: AppOptions) {
   api.use(logRouter(db));
   api.use(recipesRouter(db));
   api.use(settingsRouter(db));
+  api.use(fastingRouter(db));
   api.use((_req, _res, next) => next(notFound()));
   app.use('/api', api);
 

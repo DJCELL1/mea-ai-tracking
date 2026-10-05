@@ -226,6 +226,7 @@ export const logEntries = pgTable(
 );
 
 // ---------- Fasting ----------
+// Hours fasted are calculated from log entries when needed, so edits are always reflected.
 
 export const windowOverrides = pgTable(
   'window_overrides',
@@ -238,22 +239,6 @@ export const windowOverrides = pgTable(
     endTime: time('end_time'),
     /** No eating window at all on this day. */
     isFastDay: boolean('is_fast_day').notNull().default(false),
-  },
-  (t) => [primaryKey({ columns: [t.userId, t.date] })],
-);
-
-export const fastingDays = pgTable(
-  'fasting_days',
-  {
-    userId: integer('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    date: date('date').notNull(),
-    fastStart: timestamp('fast_start', { withTimezone: true }),
-    fastEnd: timestamp('fast_end', { withTimezone: true }),
-    hoursFasted: doublePrecision('hours_fasted'),
-    metGoal: boolean('met_goal').notNull().default(false),
-    updatedAt: timestamps.updatedAt,
   },
   (t) => [primaryKey({ columns: [t.userId, t.date] })],
 );

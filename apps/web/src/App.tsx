@@ -3,6 +3,7 @@ import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
 import { useMe } from './api/hooks';
 import { ApiError } from './lib/api';
 import { Add } from './pages/Add';
+import { Fasting } from './pages/Fasting';
 import { FoodEditor } from './pages/FoodEditor';
 import { Foods } from './pages/Foods';
 import { Login } from './pages/Login';
@@ -81,6 +82,7 @@ export function App() {
           <Route path="/recipes/new" element={<RecipeEditor />} />
           <Route path="/recipes/:id" element={<RecipeEditor />} />
           <Route path="/history" element={<div className="empty">History and charts arrive in phase 5.</div>} />
+          <Route path="/fasting" element={<Fasting />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
