@@ -3,9 +3,9 @@
 Personal kilojoule/calorie and macro tracker, built as an installable Progressive Web App.
 Node + Express + TypeScript API, React (Vite) front end, PostgreSQL. Deployed on Railway.
 
-> **Status:** Phase 5 of 6 done — everything except the Railway deploy: food database import, login,
-> search and logging, custom foods and recipes, targets and alerts, fasting window, history and
-> charts, CSV export, and push notifications.
+> **Status:** All 6 phases done: food database import, login, search and logging, custom foods and
+> recipes, targets and alerts, fasting window, history and charts, CSV export, push notifications,
+> and Railway deployment. **To deploy, follow [DEPLOY.md](DEPLOY.md).**
 
 ## Project layout
 
@@ -41,6 +41,13 @@ Production-style (what Railway runs):
 npm run build    # shared → web → api
 npm start        # runs migrations, then serves the API and the built PWA on $PORT
 ```
+
+## Deploying
+
+Railway setup, step by step (project, Postgres, variables, domain, loading the food database and
+creating your login), is in **[DEPLOY.md](DEPLOY.md)**. In short: the repo's `Dockerfile` and
+`railway.json` build one service that runs migrations on start, serves the API and the PWA, and
+sends push notifications; health check at `/api/health`.
 
 ## Environment variables
 

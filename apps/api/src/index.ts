@@ -8,6 +8,7 @@ const pool = createPool();
 const db = createDb(pool);
 
 await runMigrations(db);
+console.log('Database migrations up to date.');
 
 const app = createApp({ db, session: { secret: env.sessionSecret, secureCookies: env.isProd }, webDist: env.webDist });
 const server = app.listen(env.port, () => console.log(`Mea AI Tracking listening on :${env.port}`));
