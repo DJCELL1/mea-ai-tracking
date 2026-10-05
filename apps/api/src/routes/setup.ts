@@ -7,7 +7,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 import type { Db } from '../db/client.js';
-import { foods, foodSources, importRuns, settings, users } from '../db/schema.js';
+import { foods, foodSources, importRuns, sessions, settings, users } from '../db/schema.js';
 import { env } from '../env.js';
 import { badRequest, HttpError } from '../http.js';
 import { hashPassword, MIN_PASSWORD_LENGTH } from '../auth/password.js';
@@ -86,6 +86,31 @@ export function setupRouter(db: Db, cfg: SessionConfig) {
     limiter.succeed(key);
     await createSession(db, res, user.id, cfg);
     res.status(201).json({ ok: true });
+  });
+
+  /** Forgot password: the setup code proves it's you. Sets the login email and password, and signs out other devices. */
+  r.post('/setup/reset-password', async (req, res) => {
+    const body = z
+      .object({
+        code: z.string().min(1).max(200),
+        email: z.string().trim().toLowerCase().email(),
+        password: z.string().min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters`).max(200),
+      })
+      .parse(req.body);
+    if (!env.setupToken) throw new HttpError(503, 'Add a SETUP_TOKEN variable on Railway first, then try again.');
+    const key = `setup|${req.ip}`;
+    limiter.check(key);
+    if (!codeMatches(body.code, env.setupToken)) {
+      limiter.fail(key);
+      throw new HttpError(401, "That setup code doesn't match SETUP_TOKEN.");
+    }
+    const [user] = await db.select().from(users).orderBy(users.id).limit(1);
+    if (!user) throw new HttpError(409, 'There is no account yet. Reload the page to set one up.');
+    await db.update(users).set({ email: body.email, passwordHash: await hashPassword(body.password) }).where(eq(users.id, user.id));
+    await db.delete(sessions).where(eq(sessions.userId, user.id));
+    limiter.succeed(key);
+    await createSession(db, res, user.id, cfg);
+    res.json({ ok: true });
   });
 
   r.get('/foods/stats', requireAuth, async (_req, res) => {

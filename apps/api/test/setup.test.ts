@@ -74,3 +74,28 @@ describe.skipIf(!TEST_DB)('first-run setup', () => {
     await agent.post('/api/foods/import').set(H).attach('nutrients', Buffer.from('x'), 'notes.txt').expect(400);
   });
 });
+
+describe.skipIf(!TEST_DB)('forgot password', () => {
+  const pool = createPool(TEST_DB);
+  const db = createDb(pool);
+  const app = createApp({ db, session: { secret: 'test-secret', secureCookies: false } });
+  const H = { 'X-Requested-With': 'mea' };
+  afterAll(async () => {
+    delete process.env.SETUP_TOKEN;
+    await pool.end();
+  });
+
+  it('resets the password (and email) with the setup code and signs out old sessions', async () => {
+    process.env.SETUP_TOKEN = 'my-setup-code';
+    const old = request.agent(app);
+    await old.post('/api/auth/login').set(H).send({ email: 'me@example.com', password: 'a long password' }).expect(200);
+
+    await request(app).post('/api/setup/reset-password').set(H).send({ code: 'wrong', email: 'me@example.com', password: 'new long password' }).expect(401);
+    const fresh = request.agent(app);
+    await fresh.post('/api/setup/reset-password').set(H).send({ code: 'my-setup-code', email: 'New@Example.com', password: 'new long password' }).expect(200);
+    expect((await fresh.get('/api/auth/me').expect(200)).body.email).toBe('new@example.com');
+    await old.get('/api/auth/me').expect(401);
+    await request(app).post('/api/auth/login').set(H).send({ email: 'new@example.com', password: 'new long password' }).expect(200);
+    await request(app).post('/api/auth/login').set(H).send({ email: 'me@example.com', password: 'a long password' }).expect(401);
+  });
+});

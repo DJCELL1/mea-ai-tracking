@@ -129,8 +129,9 @@ address shows the login screen.
    the **Food Details** `.xlsx` for descriptions, then tap **Upload and import**. It takes about
    10–30 seconds.
 
-The setup screen closes for good once your account exists, so nobody else can use it. You can
-delete `SETUP_TOKEN` afterwards. To load a newer AFCD release later, use **Settings → Food
+The setup screen closes for good once your account exists, so nobody else can use it. Keep
+`SETUP_TOKEN` set if you want **Forgot password?** on the login screen to work: it resets your
+password (and email) with the setup code. To load a newer AFCD release later, use **Settings → Food
 database → Upload a newer AFCD file**.
 
 ### Option B: from your computer
@@ -191,8 +192,8 @@ The app connects to the public address over TLS automatically. If you have a loc
   Database changes apply on start.
 - **Re-running the food import** (for example a new AFCD release): repeat step 6 with the new file.
   Foods are updated in place, never duplicated, and past log entries are untouched.
-- **Changing your password:** run `npm run create-user` again with the same email (step 6). It
-  resets the password.
+- **Forgot or changing your password:** on the login screen tap **Forgot password?** and use your
+  `SETUP_TOKEN` code. Or run `npm run create-user` again with the same email (step 6, option B).
 - **Keep one replica.** The notification scheduler and the failed-login limiter run inside the app,
   so don't scale the service above one instance. Duplicate notifications are prevented regardless.
 - **Backups:**
