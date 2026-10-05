@@ -40,3 +40,23 @@ export function scalePer100g(per100g: Nutrients, grams: number): Nutrients {
   }
   return out;
 }
+
+export function emptyNutrients(): Nutrients {
+  return { energyKj: null, energyKcal: null, proteinG: null, fatG: null, carbsG: null, sugarsG: null, fibreG: null, sodiumMg: null };
+}
+
+/** Add nutrient sets; a total is null only if every part is null. */
+export function sumNutrients(items: Nutrients[]): Nutrients {
+  const out = emptyNutrients();
+  for (const item of items) {
+    for (const key of NUTRIENT_KEYS) {
+      const v = item[key];
+      if (v != null) out[key] = (out[key] ?? 0) + v;
+    }
+  }
+  for (const key of NUTRIENT_KEYS) {
+    const v = out[key];
+    if (v != null) out[key] = round(v, key === 'sodiumMg' ? 0 : 1);
+  }
+  return out;
+}

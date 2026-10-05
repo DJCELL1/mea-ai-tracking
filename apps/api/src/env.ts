@@ -15,6 +15,14 @@ export const env = {
   get databaseUrl() {
     return required('DATABASE_URL');
   },
+  get sessionSecret() {
+    const s = required('SESSION_SECRET');
+    if (env.isProd && (s.length < 32 || s === 'change-me')) throw new Error('SESSION_SECRET must be at least 32 random characters');
+    return s;
+  },
   port: Number(process.env.PORT ?? 3000),
   tzDefault: process.env.TZ_DEFAULT ?? 'Australia/Sydney',
+  isProd: process.env.NODE_ENV === 'production',
+  /** Built PWA to serve; defaults to apps/web/dist. */
+  webDist: process.env.WEB_DIST ?? fileURLToPath(new URL('../../web/dist', import.meta.url)),
 };

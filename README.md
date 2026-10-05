@@ -3,15 +3,16 @@
 Personal kilojoule/calorie and macro tracker, built as an installable Progressive Web App.
 Node + Express + TypeScript API, React (Vite) front end, PostgreSQL. Deployed on Railway.
 
-> **Status:** Phase 1 of 6 — database schema, migrations and the food importer.
-> Logging, targets, fasting, history, notifications and the Railway deploy follow in later phases.
+> **Status:** Phase 2 of 6 done — food database import, login, fuzzy search, logging, custom foods,
+> recipes/saved meals, copy day, and the installable PWA shell with offline viewing.
+> Targets and alerts, fasting window, history and notifications, and the Railway deploy follow.
 
 ## Project layout
 
 ```
 packages/shared   types and nutrition helpers shared by API and web (kJ↔kcal, scaling)
 apps/api          Express API, Drizzle schema + migrations, food import CLI
-apps/web          React PWA (phase 2)
+apps/web          React PWA (Vite), served by the API in production
 data/             drop food database files here (gitignored)
 ```
 
@@ -24,7 +25,21 @@ npm install
 cp .env.example .env          # then set DATABASE_URL
 npm run build -w @mea/shared  # build the shared package once
 npm run db:migrate            # create the tables
+npm run import:foods -- --source afcd --file "data/AFCD Release 3 - Nutrient profiles.xlsx"
 npm run create-user -- --email you@example.com   # prompts for a password (10+ characters)
+```
+
+### Running it
+
+```bash
+npm run dev      # API on :3000 (auto-reload) + web on http://localhost:5173 (proxies /api)
+```
+
+Production-style (what Railway runs):
+
+```bash
+npm run build    # shared → web → api
+npm start        # runs migrations, then serves the API and the built PWA on $PORT
 ```
 
 ## Environment variables
@@ -33,7 +48,8 @@ npm run create-user -- --email you@example.com   # prompts for a password (10+ c
 |---|---|---|
 | `DATABASE_URL` | yes | Postgres connection string. On Railway use `${{Postgres.DATABASE_URL}}`. |
 | `PORT` | no | API port, default 3000. Railway sets it automatically. |
-| `SESSION_SECRET` | yes (from phase 2) | Long random string: `openssl rand -hex 32`. |
+| `SESSION_SECRET` | yes | Long random string used to protect login sessions: `openssl rand -hex 32`. |
+| `NODE_ENV` | prod | Set to `production` on Railway (secure cookies, stricter checks). |
 | `TZ_DEFAULT` | no | Timezone for new users' day boundaries, default `Australia/Sydney`. |
 | `CREATE_USER_PASSWORD` | no | Lets `create-user` run without a prompt (e.g. in a Railway shell). |
 
@@ -127,11 +143,27 @@ Each source is an adapter in `apps/api/src/import/sources/`. To add, say, the NZ
 
 If a source gives kcal but not kJ, kJ is calculated automatically, and vice versa.
 
+## What's in the app so far
+
+- **Login:** email and password, 90-day sessions that refresh while you use the app. Repeated
+  failed logins are temporarily blocked.
+- **Today:** day totals (kcal and kJ, protein, carbs, fat), entries grouped by meal, previous/next day.
+  Tap an entry to change the amount, serving or meal, or delete it.
+- **Add food:** fuzzy search that copes with typos, with your recent and most-logged foods shown
+  before you type. Log by grams or by serving. Also **Quick add** (kcal or kJ plus optional macros)
+  and **Meals** (log a saved meal in one tap, or a portion of a recipe).
+- **Copy a day:** the whole day or single meals, from any date.
+- **My foods:** add foods from a nutrition label (per serve or per 100 g, kJ or kcal); build
+  **recipes** (logged by portion, searchable like any food) and **saved meals** (logged as
+  separate items in one tap).
+- **PWA:** installable from Safari ("Add to Home Screen") or Chrome ("Install app"). The app opens
+  offline and shows the last-loaded data for today and recently viewed days; logging needs a connection.
+
 ## Development
 
 ```bash
 npm run typecheck
 npm test                                                  # unit tests
-TEST_DATABASE_URL=postgres://… npm test -w @mea/api       # also run DB tests (wipes that database!)
+TEST_DATABASE_URL=postgres://… npm test -w @mea/api       # also run DB and API tests (wipes that database!)
 npm run db:generate                                       # create a migration after editing apps/api/src/db/schema.ts
 ```
