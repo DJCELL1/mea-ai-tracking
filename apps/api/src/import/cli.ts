@@ -1,5 +1,6 @@
 import { parseArgs } from 'node:util';
 import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { createDb, createPool } from '../db/client.js';
 import { partitionRows, importFoods } from './upsert.js';
 import { sources } from './sources/index.js';
@@ -32,15 +33,17 @@ if (!adapter) {
   console.error(`Unknown source "${values.source}".\n\n${USAGE}`);
   process.exit(1);
 }
-if (!existsSync(values.file)) {
-  console.error(`File not found: ${values.file}`);
+// npm runs workspace scripts from apps/api; resolve relative paths from where the command was typed
+const file = path.resolve(process.env.INIT_CWD ?? process.cwd(), values.file);
+if (!existsSync(file)) {
+  console.error(`File not found: ${file}`);
   process.exit(1);
 }
 
 if (values.inspect) {
-  console.log(await adapter.inspect(values.file));
+  console.log(await adapter.inspect(file));
 } else if (values['dry-run']) {
-  const { version, rows } = await adapter.read(values.file);
+  const { version, rows } = await adapter.read(file);
   const { foods, skipped } = partitionRows(rows);
   console.log(`Dry run (${adapter.name}, ${version ?? 'unknown version'}): ${rows.length} rows read, ${foods.length} would be imported, ${skipped.length} skipped.`);
   for (const s of skipped.slice(0, 20)) console.log(`  row ${s.rowNumber}: ${s.reason}`);
@@ -49,7 +52,7 @@ if (values.inspect) {
   const pool = createPool();
   try {
     const started = Date.now();
-    const r = await importFoods(createDb(pool), adapter, values.file);
+    const r = await importFoods(createDb(pool), adapter, file);
     console.log(`Imported ${adapter.name} in ${((Date.now() - started) / 1000).toFixed(1)} s`);
     console.log(`  ${r.rowsRead} rows read · ${r.inserted} new · ${r.updated} updated · ${r.skipped.length} skipped`);
     for (const s of r.skipped.slice(0, 20)) console.log(`  row ${s.rowNumber}: ${s.reason}`);

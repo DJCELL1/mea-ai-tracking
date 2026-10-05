@@ -155,6 +155,8 @@ export const foodServings = pgTable(
     label: text('label').notNull(),
     grams: doublePrecision('grams').notNull(),
     isDefault: boolean('is_default').notNull().default(false),
+    /** True for servings that came from a data source; re-imports replace these but never user-added ones. */
+    imported: boolean('imported').notNull().default(false),
   },
   (t) => [index('food_servings_food_idx').on(t.foodId)],
 );

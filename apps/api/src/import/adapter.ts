@@ -5,6 +5,8 @@ export interface NormalisedFood extends Nutrients {
   sourceFoodId: string;
   name: string;
   description: string | null;
+  /** Serving sizes from the source. When given, they replace this food's previously imported servings. */
+  servings?: { label: string; grams: number }[];
 }
 
 export type RowResult =

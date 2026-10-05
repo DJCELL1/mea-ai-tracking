@@ -44,9 +44,11 @@ Blank values in the source stay empty (not measured) rather than becoming 0.
 
 ### AFCD (Food Standards Australia New Zealand)
 
-1. Download the AFCD nutrient profile Excel file from
+1. Download the AFCD Excel files from
    <https://www.foodstandards.gov.au/science-data/food-nutrient-databases/afcd>.
-2. Save it in `data/`, e.g. `data/AFCD Release 3 - Nutrient profiles.xlsx`.
+2. Save **Nutrient profiles** in `data/`, e.g. `data/AFCD Release 3 - Nutrient profiles.xlsx`.
+   Optionally also save **Food Details** in the same folder; its food descriptions are picked up automatically.
+   (The Recipes and Nutrient details files aren't needed.)
 3. Check how the file will be read. This prints the sheets, header row, column mapping and sample rows, and writes nothing:
 
    ```bash
@@ -69,12 +71,13 @@ Blank values in the source stay empty (not measured) rather than becoming 0.
 Public Food Key and updated in place, so there are no duplicates. Foods missing from the new file
 are kept, so past log entries still work. Each run is recorded in the `import_runs` table.
 
-Column mapping used for AFCD (per 100 g sheet):
+Column mapping used for AFCD, confirmed against Release 3 (sheet "All solids & liquids per 100 g", 1,588 foods):
 
 | foods column | AFCD column |
 |---|---|
 | `source_food_id` | Public Food Key |
 | `name` | Food Name |
+| `description` | Food Description (from the Food Details file, if present) |
 | `energy_kj` | Energy with dietary fibre, equated (kJ) |
 | `energy_kcal` | calculated from `energy_kj` ÷ 4.184 |
 | `protein_g` | Protein (g) |
@@ -83,6 +86,35 @@ Column mapping used for AFCD (per 100 g sheet):
 | `sugars_g` | Total sugars (g) |
 | `fibre_g` | Total dietary fibre (g) |
 | `sodium_mg` | Sodium (Na) (mg) |
+
+### MyFoodData (US foods, optional)
+
+The MyFoodData spreadsheet adds about 14,000 US foods (USDA SR Legacy and FNDDS), including
+US brands, with serving sizes.
+
+```bash
+npm run import:foods -- --source myfooddata --file "data/MyFoodData Nutrition Facts Release 1.4.xlsx" --inspect
+npm run import:foods -- --source myfooddata --file "data/MyFoodData Nutrition Facts Release 1.4.xlsx"
+```
+
+| foods column | MyFoodData column |
+|---|---|
+| `source_food_id` | ID |
+| `name` | name |
+| `description` | Food Group |
+| `energy_kcal` | Calories |
+| `energy_kj` | calculated from `energy_kcal` × 4.184 |
+| `protein_g` | Protein (g) |
+| `fat_g` | Fat (g) |
+| `carbs_g` | Net-Carbs (g), i.e. carbohydrate − fibre (falls back to calculating it) |
+| `sugars_g` | Sugars (g) |
+| `fibre_g` | Fiber (g) |
+| `sodium_mg` | Sodium (mg) |
+| `food_servings` | Serving Weight / Serving Description 1–9 |
+
+US "carbohydrate" includes fibre while Australian "available carbohydrate" doesn't, so net carbs
+are stored to keep carbs comparable between sources. Re-importing replaces imported serving sizes
+but never ones you've added yourself.
 
 ### Adding another data source
 

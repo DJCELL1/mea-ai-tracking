@@ -20,7 +20,8 @@ CREATE TABLE "food_servings" (
 	"food_id" integer NOT NULL,
 	"label" text NOT NULL,
 	"grams" double precision NOT NULL,
-	"is_default" boolean DEFAULT false NOT NULL
+	"is_default" boolean DEFAULT false NOT NULL,
+	"imported" boolean DEFAULT false NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "food_sources" (

@@ -1,9 +1,9 @@
-import { eq, sql } from 'drizzle-orm';
+import { and, eq, inArray, sql } from 'drizzle-orm';
 import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import path from 'node:path';
 import type { Db } from '../db/client.js';
-import { foods, foodSources, importRuns } from '../db/schema.js';
+import { foods, foodServings, foodSources, importRuns } from '../db/schema.js';
 import type { FoodSourceAdapter, NormalisedFood, RowResult } from './adapter.js';
 
 export interface ImportSummary {
@@ -39,6 +39,19 @@ export function partitionRows(rows: RowResult[]) {
   return { foods: [...byId.values()], skipped };
 }
 
+/** Swap in the source's serving sizes for foods that provide them, keeping user-added servings. */
+async function replaceImportedServings(db: Db, chunk: NormalisedFood[], saved: { id: number; sourceFoodId: string | null }[]) {
+  const idByKey = new Map(saved.map((r) => [r.sourceFoodId, r.id]));
+  const withServings = chunk.filter((f) => f.servings);
+  if (!withServings.length) return;
+  const foodIds = withServings.map((f) => idByKey.get(f.sourceFoodId)!);
+  await db.delete(foodServings).where(and(inArray(foodServings.foodId, foodIds), eq(foodServings.imported, true)));
+  const rows = withServings.flatMap((f) =>
+    f.servings!.map((s, i) => ({ foodId: idByKey.get(f.sourceFoodId)!, label: s.label, grams: s.grams, isDefault: i === 0, imported: true })),
+  );
+  if (rows.length) await db.insert(foodServings).values(rows);
+}
+
 export async function ensureSource(db: Db, code: string, name: string, version: string | null) {
   const [row] = await db
     .insert(foodSources)
@@ -67,7 +80,8 @@ export async function importFoods(db: Db, adapter: FoodSourceAdapter, file: stri
     let inserted = 0;
     let updated = 0;
     for (let i = 0; i < items.length; i += BATCH_SIZE) {
-      const batch = items.slice(i, i + BATCH_SIZE).map((f) => ({ ...f, sourceId }));
+      const chunk = items.slice(i, i + BATCH_SIZE);
+      const batch = chunk.map(({ servings: _servings, ...f }) => ({ ...f, sourceId }));
       const result = await tx
         .insert(foods)
         .values(batch)
@@ -88,8 +102,9 @@ export async function importFoods(db: Db, adapter: FoodSourceAdapter, file: stri
           },
         })
         // xmax = 0 only for freshly inserted rows
-        .returning({ inserted: sql<boolean>`(xmax = 0)` });
+        .returning({ id: foods.id, sourceFoodId: foods.sourceFoodId, inserted: sql<boolean>`(xmax = 0)` });
       for (const r of result) r.inserted ? inserted++ : updated++;
+      await replaceImportedServings(tx as unknown as Db, chunk, result);
     }
 
     await tx

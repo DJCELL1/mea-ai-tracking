@@ -11,7 +11,7 @@ import {
   type SheetTable,
 } from './spreadsheet.js';
 
-export type MappedField = keyof NormalisedFood;
+export type MappedField = Exclude<keyof NormalisedFood, 'servings'>;
 
 export interface ColumnSpec {
   field: MappedField;
@@ -32,6 +32,20 @@ export interface SheetMappingConfig {
   /** Matches a cell in the header row (used to skip title rows). */
   headerProbe: RegExp;
   columns: ColumnSpec[];
+  /**
+   * Optional per-row step after the standard mapping, for source quirks (derived
+   * values, serving sizes). `cell` reads any column by header pattern. Return a
+   * string to skip the row with that reason.
+   */
+  finish?: (food: NormalisedFood, cell: (header: RegExp) => CellValue) => string | void;
+  /** Extra lines for the --inspect report describing what `finish` does. */
+  notes?: string[];
+}
+
+export interface MappingContext {
+  config: SheetMappingConfig;
+  headers: string[];
+  columns: ResolvedColumn[];
 }
 
 const NUMERIC_FIELDS: MappedField[] = ['energyKj', 'energyKcal', 'proteinG', 'fatG', 'carbsG', 'sugarsG', 'fibreG', 'sodiumMg'];
@@ -58,14 +72,16 @@ export async function loadMappedTable(file: string, config: SheetMappingConfig) 
   }
   if (!table) throw new Error(`No sheet has a header row matching ${config.headerProbe}. Run with --inspect to see the sheets.`);
   const columns = resolveColumns(table.headers, config.columns);
-  return { wb, table, columns };
+  const ctx: MappingContext = { config, headers: table.headers, columns };
+  return { wb, table, columns, ctx };
 }
 
 export function missingRequired(columns: ResolvedColumn[], specs: ColumnSpec[]): MappedField[] {
   return specs.filter((s) => s.required && columns.find((c) => c.field === s.field)?.index == null).map((s) => s.field);
 }
 
-export function mapRow(rowNumber: number, values: CellValue[], columns: ResolvedColumn[]): RowResult {
+export function mapRow(rowNumber: number, values: CellValue[], ctx: MappingContext): RowResult {
+  const { columns, headers, config } = ctx;
   const get = (field: MappedField) => {
     const col = columns.find((c) => c.field === field);
     return col?.index == null ? null : values[col.index] ?? null;
@@ -105,12 +121,25 @@ export function mapRow(rowNumber: number, values: CellValue[], columns: Resolved
   else if (food.energyKcal != null && food.energyKj == null) food.energyKj = kcalToKj(food.energyKcal);
   if (food.energyKj != null) food.energyKj = round(food.energyKj, 1);
 
+  if (config.finish) {
+    const cell = (header: RegExp) => {
+      const i = headers.findIndex((h) => header.test(h));
+      return i < 0 ? null : values[i] ?? null;
+    };
+    try {
+      const reason = config.finish(food, cell);
+      if (reason) return { ok: false, rowNumber, reason };
+    } catch (e) {
+      return { ok: false, rowNumber, reason: (e as Error).message };
+    }
+  }
+
   return { ok: true, rowNumber, food };
 }
 
 /** Plain-text inspection report shared by spreadsheet-based adapters. */
 export async function inspectReport(file: string, config: SheetMappingConfig, title: string): Promise<string> {
-  const { wb, table, columns } = await loadMappedTable(file, config);
+  const { wb, table, columns, ctx } = await loadMappedTable(file, config);
   const lines: string[] = [];
   lines.push(`${title}`, `File: ${file}`, '');
   lines.push('Sheets:');
@@ -125,7 +154,11 @@ export async function inspectReport(file: string, config: SheetMappingConfig, ti
     const src = c.index == null ? (spec.required ? '!! NOT FOUND (required)' : '— not found (optional, left empty)') : `${columnLetter(c.index)}: "${c.header}"`;
     lines.push(`  ${c.field.padEnd(width)} ← ${src}`);
   }
-  lines.push(`  ${'energyKcal'.padEnd(width)} ← calculated as energyKj ÷ 4.184 when the file has no kcal column`);
+  const kj = columns.find((c) => c.field === 'energyKj')?.index != null;
+  const kcal = columns.find((c) => c.field === 'energyKcal')?.index != null;
+  if (kj && !kcal) lines.push(`  ${'energyKcal'.padEnd(width)} ← calculated as energyKj ÷ 4.184`);
+  if (kcal && !kj) lines.push(`  ${'energyKj'.padEnd(width)} ← calculated as energyKcal × 4.184`);
+  for (const note of config.notes ?? []) lines.push(`  ${note}`);
 
   const used = new Set(columns.map((c) => c.index));
   const unused = table.headers.map((h, i) => ({ h, i })).filter(({ h, i }) => h && !used.has(i));
@@ -143,7 +176,7 @@ export async function inspectReport(file: string, config: SheetMappingConfig, ti
   let ok = 0;
   const skipped: string[] = [];
   for (const r of table.rows) {
-    const res = mapRow(r.rowNumber, r.values, columns);
+    const res = mapRow(r.rowNumber, r.values, ctx);
     if (res.ok) {
       ok++;
       if (shown < 3) {
@@ -154,6 +187,8 @@ export async function inspectReport(file: string, config: SheetMappingConfig, ti
           `  [row ${r.rowNumber}] ${f.sourceFoodId}  ${f.name}`,
           `     ${v(f.energyKj)} kJ / ${v(f.energyKcal)} kcal · P ${v(f.proteinG)} g · F ${v(f.fatG)} g · C ${v(f.carbsG)} g · sugars ${v(f.sugarsG)} g · fibre ${v(f.fibreG)} g · Na ${v(f.sodiumMg)} mg`,
         );
+        if (f.description) lines.push(`     description: ${f.description.length > 90 ? f.description.slice(0, 90) + '…' : f.description}`);
+        if (f.servings?.length) lines.push(`     servings: ${f.servings.map((x) => `${x.label} = ${x.grams} g`).join('; ')}`);
       }
     } else skipped.push(`row ${res.rowNumber}: ${res.reason}`);
   }

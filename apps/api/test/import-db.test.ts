@@ -2,10 +2,12 @@ import { eq, sql } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createDb, createPool } from '../src/db/client.js';
 import { runMigrations } from '../src/db/migrate.js';
-import { foods, foodSources, importRuns } from '../src/db/schema.js';
+import { foods, foodServings, foodSources, importRuns } from '../src/db/schema.js';
 import { afcd } from '../src/import/sources/afcd.js';
+import { myFoodData } from '../src/import/sources/myfooddata.js';
 import { importFoods } from '../src/import/upsert.js';
 import { DEFAULT_ROWS, makeAfcdFixture } from './fixtures/make-afcd.js';
+import { makeMyFoodDataFixture } from './fixtures/make-myfooddata.js';
 
 const url = process.env.TEST_DATABASE_URL;
 
@@ -50,5 +52,20 @@ describe.skipIf(!url)('AFCD import into Postgres', () => {
       sql`SELECT name FROM foods WHERE word_similarity(${'chiken brest'}, name) >= 0.3 ORDER BY word_similarity(${'chiken brest'}, name) DESC`,
     );
     expect(res.rows[0]?.name).toBe('Chicken, breast, lean, grilled');
+  });
+
+  it('replaces imported servings on re-import but keeps ones I added', async () => {
+    const file = await makeMyFoodDataFixture();
+    await importFoods(db, myFoodData, file);
+    const [egg] = await db.select().from(foods).where(eq(foods.sourceFoodId, '171287'));
+    await db.insert(foodServings).values({ foodId: egg.id, label: '2 eggs', grams: 100 });
+
+    await importFoods(db, myFoodData, file);
+    const servings = await db.select().from(foodServings).where(eq(foodServings.foodId, egg.id));
+    expect(servings.map((s) => [s.label, s.imported, s.isDefault]).sort()).toEqual([
+      ['1 large', true, true],
+      ['1 medium', true, false],
+      ['2 eggs', false, false],
+    ]);
   });
 });

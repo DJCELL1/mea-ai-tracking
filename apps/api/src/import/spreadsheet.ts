@@ -100,7 +100,7 @@ export function columnLetter(index: number): string {
 }
 
 /**
- * Parse a nutrient cell. Blank/'-'/'NA' → null (not measured); 'tr'/'trace' → 0;
+ * Parse a nutrient cell. Blank/'-'/'NA'/'NULL' → null (not measured); 'tr'/'trace' → 0;
  * '<0.1' → 0. Throws on anything else that isn't a number.
  */
 export function parseNumber(v: CellValue): number | null {
@@ -108,7 +108,7 @@ export function parseNumber(v: CellValue): number | null {
   if (typeof v === 'number') return Number.isFinite(v) ? v : null;
   if (typeof v !== 'string') throw new Error(`not a number: ${String(v)}`);
   const s = v.trim().toLowerCase();
-  if (s === '' || s === '-' || s === 'na' || s === 'n/a') return null;
+  if (s === '' || s === '-' || s === 'na' || s === 'n/a' || s === 'null') return null;
   if (s === 'tr' || s === 'trace' || s.startsWith('<')) return 0;
   const n = Number(s.replace(/,/g, ''));
   if (!Number.isFinite(n)) throw new Error(`not a number: "${v}"`);
