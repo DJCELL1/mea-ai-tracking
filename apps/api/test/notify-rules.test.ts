@@ -58,3 +58,12 @@ describe('dueNotifications', () => {
     expect(kinds(at('13:00'), n({ energyKcal: 2100, proteinG: 100 }), { ...s, notifyTargets: false })).toEqual([]);
   });
 });
+
+describe('VAPID subject', () => {
+  it('adds mailto: to a bare email and leaves URLs alone', async () => {
+    const { normaliseSubject } = await import('../src/services/push.js');
+    expect(normaliseSubject('me@example.com')).toBe('mailto:me@example.com');
+    expect(normaliseSubject(' mailto:me@example.com ')).toBe('mailto:me@example.com');
+    expect(normaliseSubject('https://example.com')).toBe('https://example.com');
+  });
+});

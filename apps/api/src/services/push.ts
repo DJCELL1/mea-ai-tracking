@@ -18,13 +18,29 @@ export interface PushPayload {
 }
 
 let configured = false;
+let failed = false;
+
+/** Accept a bare email for VAPID_SUBJECT by adding the mailto: the push services require. */
+export function normaliseSubject(subject: string): string {
+  const s = subject.trim();
+  return /^[^@\s:]+@[^@\s]+$/.test(s) ? `mailto:${s}` : s;
+}
+
+/** True when push is set up. A bad push setting turns push off (with a log line) instead of crashing the app. */
 export function pushEnabled(): boolean {
   if (configured) return true;
+  if (failed) return false;
   const { vapidPublicKey, vapidPrivateKey, vapidSubject } = env;
   if (!vapidPublicKey || !vapidPrivateKey) return false;
-  webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
-  configured = true;
-  return true;
+  try {
+    webpush.setVapidDetails(normaliseSubject(vapidSubject), vapidPublicKey, vapidPrivateKey);
+    configured = true;
+    return true;
+  } catch (err) {
+    failed = true;
+    console.error(`Push notifications off: ${(err as Error).message}. Check VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY and VAPID_SUBJECT (e.g. mailto:you@example.com).`);
+    return false;
+  }
 }
 
 export async function saveSubscription(db: Db, userId: number, sub: { endpoint: string; keys: { p256dh: string; auth: string } }, userAgent?: string) {
@@ -97,7 +113,7 @@ export async function runNotificationTick(db: Db, now = new Date()) {
 /** Run the tick at the start of every minute. Returns a stop function. */
 export function startNotificationScheduler(db: Db) {
   if (!pushEnabled()) {
-    console.log('Push notifications off: set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to enable them.');
+    if (!failed) console.log('Push notifications off: set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY to enable them.');
     return () => {};
   }
   let timer: NodeJS.Timeout;

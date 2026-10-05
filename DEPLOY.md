@@ -196,3 +196,4 @@ The app connects to the public address over TLS automatically. If you have a loc
 | Login works but you get logged out | Make sure `NODE_ENV=production` and you're using the `https://` address. |
 | No notifications | Check the `VAPID_*` variables are set (Settings shows a message if they aren't). On iPhone, use the home-screen app on iOS 16.4+. Check the switches under Settings → Notifications. Use **Send a test**. |
 | `Push notifications off: set VAPID_PUBLIC_KEY…` in the logs | Add the `VAPID_*` variables (step 3) and redeploy. |
+| `Push notifications off: Vapid …` in the logs | A `VAPID_*` value is wrong: check the keys were pasted whole, and `VAPID_SUBJECT` starts with `mailto:`. The rest of the app keeps working. |
