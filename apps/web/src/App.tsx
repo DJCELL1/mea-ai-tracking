@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { useMe } from './api/hooks';
+import { useFoodStats } from './components/FoodImport';
+import { api } from './lib/api';
+import { SetupAccount, SetupFoods } from './pages/Setup';
 import { ApiError } from './lib/api';
 import { Add } from './pages/Add';
 import { Fasting } from './pages/Fasting';
@@ -52,17 +56,52 @@ function TabBar() {
   );
 }
 
+const SKIP_KEY = 'mea:skipFoodSetup';
+function skippedFoodSetup() {
+  try {
+    return localStorage.getItem(SKIP_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export function App() {
   const { data: me, error, isLoading } = useMe();
   const online = useOnline();
+  const loggedOut = error instanceof ApiError && error.status === 401;
+  const { data: setup } = useQuery({
+    queryKey: ['setupStatus'],
+    queryFn: () => api.get<{ needsAccount: boolean; setupCodeConfigured: boolean }>('/setup/status'),
+    enabled: loggedOut,
+  });
+  const { data: foodStats } = useFoodStats(!!me);
+  const [skipFoods, setSkipFoods] = useState(skippedFoodSetup);
 
   if (isLoading) return <div className="spinner" style={{ marginTop: '40vh' }} />;
   if (!me) {
-    if (error instanceof ApiError && error.status === 401) return <Login />;
+    if (loggedOut) {
+      if (!setup) return <div className="spinner" style={{ marginTop: '40vh' }} />;
+      return setup.needsAccount ? <SetupAccount codeConfigured={setup.setupCodeConfigured} /> : <Login />;
+    }
     return (
       <main className="app">
         <div className="banner error">{online ? "Can't reach Mea right now." : "You're offline and Mea hasn't been opened on this device yet."}</div>
       </main>
+    );
+  }
+
+  if (foodStats && foodStats.afcdFoods === 0 && !skipFoods) {
+    return (
+      <SetupFoods
+        onSkip={() => {
+          try {
+            localStorage.setItem(SKIP_KEY, '1');
+          } catch {
+            /* ignore */
+          }
+          setSkipFoods(true);
+        }}
+      />
     );
   }
 

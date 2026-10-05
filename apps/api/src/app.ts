@@ -13,6 +13,7 @@ import { pushRouter } from './routes/push.js';
 import { logRouter } from './routes/log.js';
 import { recipesRouter } from './routes/recipes.js';
 import { settingsRouter } from './routes/settings.js';
+import { setupRouter } from './routes/setup.js';
 
 export interface AppOptions {
   db: Db;
@@ -45,6 +46,7 @@ export function createApp({ db, session, webDist }: AppOptions) {
   api.use(requireCustomHeader);
   api.use(loadSession(db, session));
   api.use('/auth', authRouter(db, session));
+  api.use(setupRouter(db, session));
   api.use(requireAuth);
   api.use(foodsRouter(db));
   api.use(logRouter(db));

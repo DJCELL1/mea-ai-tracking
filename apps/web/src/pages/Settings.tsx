@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { keys, useMe } from '../api/hooks';
 import { NumberInput } from '../components/NumberInput';
+import { FoodImport, useFoodStats } from '../components/FoodImport';
 import { PushControls } from '../components/PushControls';
 import { useToast } from '../components/Toast';
 import { api, errorMessage } from '../lib/api';
@@ -233,6 +234,8 @@ export function Settings() {
         </button>
       </form>
 
+      <FoodDatabase />
+
       <section className="card stack small muted">
         <strong style={{ color: 'var(--text)' }}>Install on your phone</strong>
         <div>iPhone: open in Safari, tap Share, then "Add to Home Screen".</div>
@@ -243,5 +246,29 @@ export function Settings() {
         Log out
       </button>
     </div>
+  );
+}
+
+function FoodDatabase() {
+  const { data: stats } = useFoodStats();
+  const [open, setOpen] = useState(false);
+  const afcd = stats?.bySource.find((s) => s.code === 'afcd');
+  return (
+    <section className="card stack">
+      <h2>Food database</h2>
+      {stats && (
+        <div className="small muted">
+          {afcd?.count ? `${fmt(afcd.count)} AFCD foods (${afcd.version ?? 'unknown release'}).` : 'No AFCD foods loaded yet.'}
+          {stats.lastImport && ` Last import ${new Date(stats.lastImport.at).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' })}.`}
+        </div>
+      )}
+      {open ? (
+        <FoodImport />
+      ) : (
+        <button type="button" className="btn btn-block" onClick={() => setOpen(true)}>
+          {afcd?.count ? 'Upload a newer AFCD file' : 'Upload the AFCD file'}
+        </button>
+      )}
+    </section>
   );
 }

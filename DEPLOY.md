@@ -87,6 +87,7 @@ The first deploy **will fail**. That's expected, because the database and settin
 | `NODE_ENV` | `production` turns on secure cookies and checks that `SESSION_SECRET` is strong. |
 | `SESSION_SECRET` | Protects your login sessions. Changing it logs you out everywhere. |
 | `TZ_DEFAULT` | Timezone given to your login when it's first created; you can change it later in Settings. |
+| `SETUP_TOKEN` | Optional. Private code for creating your login from the setup screen (step 6, option A). |
 | `VAPID_*` | Push notification keys. Without them the app works but sends no notifications. Don't change them later, or every device has to turn notifications on again. |
 
 You don't need to set `PORT`. Railway sets it automatically.
@@ -116,7 +117,23 @@ Push notification scheduler running.
 The health check (`/api/health`) should pass and the deploy should show **Active**. Opening the
 address shows the login screen.
 
-## 6. Load the food database and create your login
+## 6. Create your login and load the food database
+
+### Option A: from your phone (no installs)
+
+1. On the app service, open **Variables** and add `SETUP_TOKEN`. Give it any long, private value,
+   for example the output of `openssl rand -hex 16`. Let it redeploy.
+2. Open your Railway address. While no account exists you'll see **Set up Mea**. Enter the setup code
+   (your `SETUP_TOKEN` value), your email and a password (10+ characters).
+3. Next, **Load the food database**: choose the AFCD **Nutrient profiles** `.xlsx`, and optionally
+   the **Food Details** `.xlsx` for descriptions, then tap **Upload and import**. It takes about
+   10–30 seconds.
+
+The setup screen closes for good once your account exists, so nobody else can use it. You can
+delete `SETUP_TOKEN` afterwards. To load a newer AFCD release later, use **Settings → Food
+database → Upload a newer AFCD file**.
+
+### Option B: from your computer
 
 Run these from your computer, against the live database.
 

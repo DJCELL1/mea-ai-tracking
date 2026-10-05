@@ -33,6 +33,10 @@ export const env = {
   get vapidSubject() {
     return process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com';
   },
+  /** Private code needed to create the first login from the setup screen. */
+  get setupToken() {
+    return process.env.SETUP_TOKEN?.trim() ?? '';
+  },
   /** Built PWA to serve; defaults to apps/web/dist. */
   webDist: process.env.WEB_DIST ?? fileURLToPath(new URL('../../web/dist', import.meta.url)),
 };

@@ -61,6 +61,7 @@ sends push notifications; health check at `/api/health`.
 | `VAPID_PUBLIC_KEY` | for push | Web push public key. Generate a pair with `npm run vapid`. Push is off when unset. |
 | `VAPID_PRIVATE_KEY` | for push | Web push private key (keep secret). |
 | `VAPID_SUBJECT` | for push | Contact for push services, e.g. `mailto:you@example.com`. |
+| `SETUP_TOKEN` | no | Private code that lets you create the first login from the in-app setup screen. The screen only works while no account exists. |
 | `CREATE_USER_PASSWORD` | no | Lets `create-user` run without a prompt (e.g. in a Railway shell). |
 
 ## Food import
@@ -141,6 +142,12 @@ npm run import:foods -- --source myfooddata --file "data/MyFoodData Nutrition Fa
 US "carbohydrate" includes fibre while Australian "available carbohydrate" doesn't, so net carbs
 are stored to keep carbs comparable between sources. Re-importing replaces imported serving sizes
 but never ones you've added yourself.
+
+### Uploading from the app
+
+Once logged in, **Settings → Food database** lets you upload the AFCD Nutrient profiles file
+(plus Food Details for descriptions) from your phone. It runs the same import as the command above.
+On a brand-new install, the app offers this straight after you create your login.
 
 ### Adding another data source
 
