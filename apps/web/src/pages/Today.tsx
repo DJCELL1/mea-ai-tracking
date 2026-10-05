@@ -1,24 +1,27 @@
 import { addDays, MEALS, type LogEntryDto, type Meal } from '@mea/shared';
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { useDayLog, useInvalidate, useToday } from '../api/hooks';
+import { useDayLog, useInvalidate, useMe, useToday } from '../api/hooks';
+import { AlertBanners } from '../components/AlertBanners';
+import { TargetsCard } from '../components/TargetsCard';
 import { AmountSheet } from '../components/AmountSheet';
 import { MacroLine } from '../components/MacroLine';
 import { QuickAddForm } from '../components/QuickAddForm';
 import { Sheet } from '../components/Sheet';
 import { useToast } from '../components/Toast';
 import { api, errorMessage } from '../lib/api';
-import { amountLabel, fmt, g, MEAL_LABELS, prettyDate } from '../lib/format';
+import { amountLabel, fmt, MEAL_LABELS, prettyDate } from '../lib/format';
 
 export function Today() {
   const today = useToday();
+  const { data: me } = useMe();
   const [params, setParams] = useSearchParams();
   const date = params.get('date') ?? today;
   const { data: day, isLoading, isError } = useDayLog(date);
   const [editing, setEditing] = useState<LogEntryDto | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
 
-  if (!date || !today) return <div className="spinner" />;
+  if (!date || !today || !me) return <div className="spinner" />;
   const go = (d: string) => setParams(d === today ? {} : { date: d }, { replace: true });
 
   return (
@@ -40,37 +43,8 @@ export function Today() {
 
       {day && (
         <>
-          <section className="card stack" aria-label="Day totals">
-            <div className="row between">
-              <div>
-                <div className="kcal-big num">{fmt(day.totals.energyKcal ?? 0)}</div>
-                <div className="muted small">kcal eaten</div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div className="num" style={{ fontSize: '1.3rem', fontWeight: 700 }}>
-                  {fmt(day.totals.energyKj ?? 0)}
-                </div>
-                <div className="muted small">kJ</div>
-              </div>
-            </div>
-            <div className="grid-3">
-              {(
-                [
-                  ['Protein', day.totals.proteinG, 'p'],
-                  ['Carbs', day.totals.carbsG, 'c'],
-                  ['Fat', day.totals.fatG, 'f'],
-                ] as const
-              ).map(([label, v, cls]) => (
-                <div key={label}>
-                  <div className="small muted">{label}</div>
-                  <div className={`num ${cls}`} style={{ fontWeight: 700, fontSize: '1.15rem' }}>
-                    {g(v ?? 0)}
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="small faint">Targets and progress rings arrive in phase 3.</div>
-          </section>
+          <AlertBanners totals={day.totals} settings={me.settings} date={date} />
+          <TargetsCard totals={day.totals} settings={me.settings} />
 
           {MEALS.map((meal) => (
             <MealSection key={meal} meal={meal} date={date} entries={day.entries.filter((e) => e.meal === meal)} kcal={day.byMeal[meal].energyKcal} onEdit={setEditing} />
@@ -112,8 +86,8 @@ function MealSection({ meal, date, entries, kcal, onEdit }: { meal: Meal; date: 
                 <div className="grow">
                   <div className="ellipsis">{e.name}</div>
                   <div className="small faint">
-                    {[amountLabel(e), e.entryType === 'quick_add' ? 'Quick add' : ''].filter(Boolean).join(' · ')}
-                    {(amountLabel(e) || e.entryType === 'quick_add') && (e.proteinG != null || e.carbsG != null || e.fatG != null) && ' · '}
+                    {[amountLabel(e), e.entryType === 'quick_add' && e.name !== 'Quick add' ? 'Quick add' : ''].filter(Boolean).join(' · ')}
+                    {(amountLabel(e) || (e.entryType === 'quick_add' && e.name !== 'Quick add')) && (e.proteinG != null || e.carbsG != null || e.fatG != null) && ' · '}
                     <MacroLine n={e} className="" />
                   </div>
                 </div>

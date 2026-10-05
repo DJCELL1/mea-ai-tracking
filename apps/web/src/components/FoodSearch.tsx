@@ -22,7 +22,7 @@ export function FoodRow({ food, onPick }: { food: FoodDto; onPick: (f: FoodDto) 
         <div className="grow">
           <div className="ellipsis">{food.name}</div>
           <div className="small faint num">
-            {tag && <span className="p">{tag} · </span>}
+            {tag && <strong style={{ color: 'var(--accent)' }}>{tag} · </strong>}
             {fmt(food.energyKcal)} kcal · {fmt(food.energyKj)} kJ · P {fmt(food.proteinG, 1)} g <span className="faint">/ 100 g</span>
           </div>
         </div>

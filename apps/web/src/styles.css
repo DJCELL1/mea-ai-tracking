@@ -9,11 +9,15 @@
   --faint: #6b7383;
   --accent: #3ddc97;
   --accent-ink: #062a1b;
-  --protein: #5aa9ff;
-  --carbs: #f5b84b;
-  --fat: #ef7aa8;
-  --danger: #ff6b6b;
-  --warn: #f5b84b;
+  /* Macro identity colours (validated as a set for colour-blind separation on --surface) */
+  --protein: #3987e5;
+  --carbs: #c98500;
+  --fat: #d55181;
+  /* Status colours: reserved for state, always paired with an icon and words */
+  --good: #0ca30c;
+  --warn: #fab219;
+  --critical: #d03b3b;
+  --danger: #ff6b6b; /* error text */
   --radius: 14px;
   --tap: 48px;
   --tabbar: 64px;
@@ -149,8 +153,31 @@ textarea.input { padding: 12px 14px; min-height: 80px; }
 .macro-bar { height: 8px; border-radius: 4px; background: var(--surface-2); overflow: hidden; }
 .macro-bar > i { display: block; height: 100%; border-radius: 4px; }
 .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
-.p { color: var(--protein); } .c { color: var(--carbs); } .f { color: var(--fat); }
 .bg-p { background: var(--protein); } .bg-c { background: var(--carbs); } .bg-f { background: var(--fat); }
+.macro-item { display: inline-flex; align-items: center; gap: 4px; }
+.macro-item .dot { width: 8px; height: 8px; }
+
+/* ---------- Targets ---------- */
+.targets { display: grid; gap: 16px; }
+.targets-main { display: flex; align-items: center; gap: 16px; }
+.targets-macros { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.ring { position: relative; display: inline-grid; place-items: center; }
+.ring svg { transform: rotate(-90deg); display: block; }
+.ring-center { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; line-height: 1.1; }
+.status-tag { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; font-weight: 700; }
+.status-tag.warning { color: var(--warn); }
+.status-tag.critical { color: var(--danger); }
+
+/* ---------- Alerts ---------- */
+.alert { display: flex; gap: 10px; align-items: flex-start; border-radius: 12px; padding: 10px 12px; background: var(--surface); border: 1px solid var(--border); border-left-width: 4px; }
+.alert.warning { border-left-color: var(--warn); }
+.alert.critical { border-left-color: var(--critical); }
+.alert.info { border-left-color: var(--protein); }
+.alert-icon { font-size: 1.1rem; line-height: 1.4; flex: none; }
+.alert.warning .alert-icon { color: var(--warn); }
+.alert.critical .alert-icon { color: var(--danger); }
+.alert.info .alert-icon { color: var(--protein); }
+.alert-close { flex: none; margin: -8px -6px 0 0; }
 
 /* ---------- Tab bar ---------- */
 .tabbar {

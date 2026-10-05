@@ -20,10 +20,12 @@ interface Props {
   meal?: Meal;
   /** …or editing an existing entry. */
   entry?: LogEntryDto;
+  /** Pre-filled amount for a new entry (e.g. a suggestion's usual amount). */
+  initialAmount?: { grams?: number | null; servingId?: number | null; servingQty?: number | null };
   onLogged?: () => void;
 }
 
-export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealProp, entry, onLogged }: Props) {
+export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealProp, entry, initialAmount, onLogged }: Props) {
   const { data: fetched } = useFood(entry?.foodId ?? undefined);
   const food = foodProp ?? fetched;
   const toast = useToast();
@@ -51,6 +53,16 @@ export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealPro
       }
     } else if (foodProp) {
       setMeal(mealProp ?? 'snack');
+      if (initialAmount?.servingId && foodProp.servings.some((s) => s.id === initialAmount.servingId)) {
+        setUnit(initialAmount.servingId);
+        setQty(initialAmount.servingQty ?? 1);
+        return;
+      }
+      if (initialAmount?.grams) {
+        setUnit('g');
+        setQty(initialAmount.grams);
+        return;
+      }
       const def = foodProp.servings.find((s) => s.isDefault) ?? foodProp.servings[0];
       if (def) {
         setUnit(def.id);
@@ -60,7 +72,7 @@ export function AmountSheet({ open, onClose, date, food: foodProp, meal: mealPro
         setQty(100);
       }
     }
-  }, [open, entry, foodProp, mealProp]);
+  }, [open, entry, foodProp, mealProp, initialAmount]);
 
   const serving = typeof unit === 'number' ? food?.servings.find((s) => s.id === unit) : undefined;
   const grams = qty == null ? null : serving ? round(serving.grams * qty, 1) : qty;

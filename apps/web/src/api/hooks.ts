@@ -65,7 +65,12 @@ export function useRecipe(id: number | undefined) {
 export function useInvalidate() {
   const qc = useQueryClient();
   return {
-    log: () => Promise.all([qc.invalidateQueries({ queryKey: ['log'] }), qc.invalidateQueries({ queryKey: ['search'] })]),
+    log: () =>
+      Promise.all([
+        qc.invalidateQueries({ queryKey: ['log'] }),
+        qc.invalidateQueries({ queryKey: ['search'] }),
+        qc.invalidateQueries({ queryKey: ['suggestions'] }),
+      ]),
     foods: () =>
       Promise.all([
         qc.invalidateQueries({ queryKey: ['search'] }),

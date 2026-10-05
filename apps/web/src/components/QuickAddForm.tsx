@@ -103,15 +103,15 @@ export function QuickAddForm({ date, meal: initialMeal, entry, onDone }: { date:
       </div>
       <div className="grid-3">
         <label className="field">
-          <span className="p">Protein g</span>
+          <span className="macro-item"><i className="dot bg-p" aria-hidden />Protein g</span>
           <NumberInput value={protein} onChange={setProtein} />
         </label>
         <label className="field">
-          <span className="c">Carbs g</span>
+          <span className="macro-item"><i className="dot bg-c" aria-hidden />Carbs g</span>
           <NumberInput value={carbs} onChange={setCarbs} />
         </label>
         <label className="field">
-          <span className="f">Fat g</span>
+          <span className="macro-item"><i className="dot bg-f" aria-hidden />Fat g</span>
           <NumberInput value={fat} onChange={setFat} />
         </label>
       </div>

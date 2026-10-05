@@ -110,7 +110,8 @@ export function FoodEditor() {
   const per = form.basis === 'per100g' ? 'per 100 g' : `per ${form.servingLabel || 'serve'}`;
   const nutrient = (key: 'proteinG' | 'fatG' | 'carbsG' | 'sugarsG' | 'fibreG' | 'sodiumMg', label: string, unit = 'g', cls = '') => (
     <label className="field">
-      <span className={cls}>
+      <span className="macro-item">
+        {cls && <i className={`dot bg-${cls}`} aria-hidden />}
         {label} ({unit})
       </span>
       <NumberInput value={form[key]} onChange={set(key)} />

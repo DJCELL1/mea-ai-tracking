@@ -9,6 +9,7 @@ import { authRouter } from './routes/auth.js';
 import { foodsRouter } from './routes/foods.js';
 import { logRouter } from './routes/log.js';
 import { recipesRouter } from './routes/recipes.js';
+import { settingsRouter } from './routes/settings.js';
 
 export interface AppOptions {
   db: Db;
@@ -45,6 +46,7 @@ export function createApp({ db, session, webDist }: AppOptions) {
   api.use(foodsRouter(db));
   api.use(logRouter(db));
   api.use(recipesRouter(db));
+  api.use(settingsRouter(db));
   api.use((_req, _res, next) => next(notFound()));
   app.use('/api', api);
 

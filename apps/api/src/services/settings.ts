@@ -20,3 +20,11 @@ export async function getSettings(db: Db, userId: number): Promise<SettingsDto> 
     windowEnd: hhmm(rest.windowEnd),
   };
 }
+
+export type SettingsPatch = Partial<SettingsDto>;
+
+export async function updateSettings(db: Db, userId: number, patch: SettingsPatch): Promise<SettingsDto> {
+  await getSettings(db, userId); // make sure the row exists
+  if (Object.keys(patch).length) await db.update(settings).set({ ...patch, updatedAt: new Date() }).where(eq(settings.userId, userId));
+  return getSettings(db, userId);
+}
