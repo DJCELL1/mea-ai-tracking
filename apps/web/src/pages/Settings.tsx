@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { keys, useMe } from '../api/hooks';
 import { NumberInput } from '../components/NumberInput';
+import { PushControls } from '../components/PushControls';
 import { useToast } from '../components/Toast';
 import { api, errorMessage } from '../lib/api';
 import { fmt } from '../lib/format';
@@ -194,6 +195,7 @@ export function Settings() {
 
         <section className="card stack">
           <h2>Notifications</h2>
+          <PushControls />
           {(
             [
               ['notifyWindowOpen', 'Eating window opens'],
@@ -208,7 +210,7 @@ export function Settings() {
               <input type="checkbox" checked={form[key]} onChange={(e) => set(key)(e.target.checked)} />
             </label>
           ))}
-          <div className="small muted">Phone notifications get switched on in the next update. These choices are saved now.</div>
+          <div className="small muted">Choose which ones you get, then tap Save settings.</div>
         </section>
 
         <section className="card stack">

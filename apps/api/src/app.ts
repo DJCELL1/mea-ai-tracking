@@ -8,6 +8,8 @@ import { loadSession, requireAuth, requireCustomHeader, type SessionConfig } fro
 import { authRouter } from './routes/auth.js';
 import { fastingRouter } from './routes/fasting.js';
 import { foodsRouter } from './routes/foods.js';
+import { historyRouter } from './routes/history.js';
+import { pushRouter } from './routes/push.js';
 import { logRouter } from './routes/log.js';
 import { recipesRouter } from './routes/recipes.js';
 import { settingsRouter } from './routes/settings.js';
@@ -49,6 +51,8 @@ export function createApp({ db, session, webDist }: AppOptions) {
   api.use(recipesRouter(db));
   api.use(settingsRouter(db));
   api.use(fastingRouter(db));
+  api.use(historyRouter(db));
+  api.use(pushRouter(db));
   api.use((_req, _res, next) => next(notFound()));
   app.use('/api', api);
 

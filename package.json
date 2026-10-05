@@ -18,6 +18,7 @@
     "import:foods": "npm run import:foods -w @mea/api --",
     "create-user": "npm run create-user -w @mea/api --",
     "start": "npm run start -w @mea/api",
-    "dev": "npm run dev -w @mea/api & npm run dev -w @mea/web"
+    "dev": "npm run dev -w @mea/api & npm run dev -w @mea/web",
+    "vapid": "npm run vapid -w @mea/api"
   }
 }

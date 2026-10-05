@@ -6,6 +6,7 @@ import { Add } from './pages/Add';
 import { Fasting } from './pages/Fasting';
 import { FoodEditor } from './pages/FoodEditor';
 import { Foods } from './pages/Foods';
+import { History } from './pages/History';
 import { Login } from './pages/Login';
 import { RecipeEditor } from './pages/RecipeEditor';
 import { Settings } from './pages/Settings';
@@ -81,7 +82,7 @@ export function App() {
           <Route path="/foods/:id" element={<FoodEditor />} />
           <Route path="/recipes/new" element={<RecipeEditor />} />
           <Route path="/recipes/:id" element={<RecipeEditor />} />
-          <Route path="/history" element={<div className="empty">History and charts arrive in phase 5.</div>} />
+          <Route path="/history" element={<History />} />
           <Route path="/fasting" element={<Fasting />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<Navigate to="/" replace />} />

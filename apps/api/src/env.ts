@@ -23,6 +23,16 @@ export const env = {
   port: Number(process.env.PORT ?? 3000),
   tzDefault: process.env.TZ_DEFAULT ?? 'Australia/Sydney',
   isProd: process.env.NODE_ENV === 'production',
+  /** Web push (VAPID) keys: generate with `npm run vapid`. Push is off when unset. */
+  get vapidPublicKey() {
+    return process.env.VAPID_PUBLIC_KEY ?? '';
+  },
+  get vapidPrivateKey() {
+    return process.env.VAPID_PRIVATE_KEY ?? '';
+  },
+  get vapidSubject() {
+    return process.env.VAPID_SUBJECT ?? 'mailto:admin@example.com';
+  },
   /** Built PWA to serve; defaults to apps/web/dist. */
   webDist: process.env.WEB_DIST ?? fileURLToPath(new URL('../../web/dist', import.meta.url)),
 };

@@ -3,9 +3,9 @@
 Personal kilojoule/calorie and macro tracker, built as an installable Progressive Web App.
 Node + Express + TypeScript API, React (Vite) front end, PostgreSQL. Deployed on Railway.
 
-> **Status:** Phase 4 of 6 done — food database import, login, fuzzy search, logging, custom foods,
-> recipes/saved meals, copy day, the installable PWA, daily targets with progress rings and alerts,
-> and the fasting window. History, charts and push notifications, then the Railway deploy, follow.
+> **Status:** Phase 5 of 6 done — everything except the Railway deploy: food database import, login,
+> search and logging, custom foods and recipes, targets and alerts, fasting window, history and
+> charts, CSV export, and push notifications.
 
 ## Project layout
 
@@ -51,6 +51,9 @@ npm start        # runs migrations, then serves the API and the built PWA on $PO
 | `SESSION_SECRET` | yes | Long random string used to protect login sessions: `openssl rand -hex 32`. |
 | `NODE_ENV` | prod | Set to `production` on Railway (secure cookies, stricter checks). |
 | `TZ_DEFAULT` | no | Timezone for new users' day boundaries, default `Australia/Sydney`. |
+| `VAPID_PUBLIC_KEY` | for push | Web push public key. Generate a pair with `npm run vapid`. Push is off when unset. |
+| `VAPID_PRIVATE_KEY` | for push | Web push private key (keep secret). |
+| `VAPID_SUBJECT` | for push | Contact for push services, e.g. `mailto:you@example.com`. |
 | `CREATE_USER_PASSWORD` | no | Lets `create-user` run without a prompt (e.g. in a Railway shell). |
 
 ## Food import
@@ -165,6 +168,19 @@ If a source gives kcal but not kJ, kJ is calculated automatically, and vice vers
   default). Food logged outside the window is allowed but flagged. The Fasting screen shows hours
   fasted per day (last food → first food the next day) against your goal (16 h by default), your
   current and longest streak, and your average. Windows run within one day (opening before closing).
+- **History:** week view (energy per day against your target, macro averages) and 30/90-day trends
+  for energy, protein, carbs, fat and hours fasted, each with a 7-day average. Tap a bar or slide
+  along a line to read values; every number is also in the daily table (tap a day to open it).
+  Past days are compared with your current targets.
+- **CSV export:** every entry, or daily totals with targets and hours fasted, for the selected range
+  or the last 12 months. Opens in Excel, Numbers or Google Sheets.
+- **Push notifications:** eating window opens, closing soon, and closed; the protein nudge (with a
+  food idea); and getting close to / going over targets. Each is sent at most once a day and can be
+  switched off in Settings. Turn them on per device in Settings → Notifications.
+  - **iPhone:** works only from the installed app on iOS 16.4 or later (Safari → Share → Add to Home
+    Screen, then open Mea from the home screen and turn notifications on there).
+  - **Android:** works in Chrome, installed or not.
+  - The server checks once a minute, so notifications can arrive up to about a minute late.
 - **My foods:** add foods from a nutrition label (per serve or per 100 g, kJ or kcal); build
   **recipes** (logged by portion, searchable like any food) and **saved meals** (logged as
   separate items in one tap).
@@ -178,4 +194,5 @@ npm run typecheck
 npm test                                                  # unit tests
 TEST_DATABASE_URL=postgres://… npm test -w @mea/api       # also run DB and API tests (wipes that database!)
 npm run db:generate                                       # create a migration after editing apps/api/src/db/schema.ts
+npm run vapid                                             # print a new pair of web push keys
 ```
