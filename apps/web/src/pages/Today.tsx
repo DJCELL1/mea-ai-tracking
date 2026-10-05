@@ -6,6 +6,7 @@ import { AlertBanners } from '../components/AlertBanners';
 import { TargetsCard } from '../components/TargetsCard';
 import { AmountSheet } from '../components/AmountSheet';
 import { FastingCard } from '../components/FastingCard';
+import { FillSuggestionsSheet } from '../components/FillSuggestions';
 import { MacroLine } from '../components/MacroLine';
 import { QuickAddForm } from '../components/QuickAddForm';
 import { Sheet } from '../components/Sheet';
@@ -21,6 +22,8 @@ export function Today() {
   const { data: day, isLoading, isError } = useDayLog(date);
   const [editing, setEditing] = useState<LogEntryDto | null>(null);
   const [copyOpen, setCopyOpen] = useState(false);
+  // Suggestions only appear when asked for (the button, or the button in the protein banner)
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   if (!date || !today || !me) return <div className="spinner" />;
   const go = (d: string) => setParams(d === today ? {} : { date: d }, { replace: true });
@@ -49,8 +52,13 @@ export function Today() {
               <FastingCard timeZone={me.settings.timezone} />
             </div>
           )}
-          <AlertBanners totals={day.totals} settings={me.settings} date={date} />
+          <AlertBanners totals={day.totals} settings={me.settings} date={date} onSuggest={() => setSuggestOpen(true)} />
           <TargetsCard totals={day.totals} settings={me.settings} />
+          {date === today && (day.totals.proteinG ?? 0) < me.settings.proteinGTarget && (
+            <button className="btn btn-block" style={{ marginTop: 12 }} onClick={() => setSuggestOpen(true)}>
+              🍗 What can I eat? ({fmt(me.settings.proteinGTarget - (day.totals.proteinG ?? 0))} g protein to go)
+            </button>
+          )}
 
           {MEALS.map((meal) => (
             <MealSection key={meal} meal={meal} date={date} entries={day.entries.filter((e) => e.meal === meal)} kcal={day.byMeal[meal].energyKcal} onEdit={setEditing} />
@@ -68,6 +76,7 @@ export function Today() {
       <Sheet open={!!editing && editing.entryType === 'quick_add'} onClose={() => setEditing(null)} label="Edit quick add">
         {editing && <QuickAddForm date={date} meal={editing.meal} entry={editing} onDone={() => setEditing(null)} />}
       </Sheet>
+      <FillSuggestionsSheet open={suggestOpen} onClose={() => setSuggestOpen(false)} />
       <CopyDaySheet open={copyOpen} onClose={() => setCopyOpen(false)} toDate={date} today={today} />
     </>
   );

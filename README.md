@@ -173,9 +173,12 @@ If a source gives kcal but not kJ, kJ is calculated automatically, and vice vers
 - **Targets and alerts:** set daily kcal, protein, carbs and fat targets in Settings. Today shows
   progress rings with the amount left (kJ alongside kcal). Banners warn at 90% of your energy
   target (configurable), flag any target you go over, and nudge you after 3 pm (configurable) if
-  you're under 50% of your protein target, suggesting high-protein foods you often eat with your
-  usual amounts (or everyday Australian staples until you have history). Banners can be
-  dismissed for the day.
+  you're under 50% of your protein target. Banners can be dismissed for the day.
+- **What can I eat?** A button on Today (while you're short of protein) suggests portions that cover
+  the protein you still need within the kcal you have left, with the time until your window closes.
+  It uses high-protein foods you often eat (or everyday Australian staples), sized between half and
+  double your usual amount; if no single portion covers a big gap it offers a pair with **Add both**.
+  Suggestions only appear when you tap the button.
 - **Fasting window:** set your everyday eating window in Settings (e.g. 12 pm–8 pm) and change any
   single day, or make it a fast day, on the Fasting screen. Today shows **FASTING** or **EATING** with
   a countdown to when the window opens or closes, and warns when it's about to close (30 min by
@@ -188,8 +191,8 @@ If a source gives kcal but not kJ, kJ is calculated automatically, and vice vers
   Past days are compared with your current targets.
 - **CSV export:** every entry, or daily totals with targets and hours fasted, for the selected range
   or the last 12 months. Opens in Excel, Numbers or Google Sheets.
-- **Push notifications:** eating window opens, closing soon, and closed; the protein nudge (with a
-  food idea); and getting close to / going over targets. Each is sent at most once a day and can be
+- **Push notifications:** eating window opens, closing soon (including how much protein you still
+  need), and closed; the protein nudge; and getting close to / going over targets. Each is sent at most once a day and can be
   switched off in Settings. Turn them on per device in Settings → Notifications.
   - **iPhone:** works only from the installed app on iOS 16.4 or later (Safari → Share → Add to Home
     Screen, then open Mea from the home screen and turn notifications on there).

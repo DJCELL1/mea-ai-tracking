@@ -1,20 +1,5 @@
 import { computeAlerts, type DayAlert, type Nutrients, type SettingsDto } from '@mea/shared';
-import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { api } from '../lib/api';
-import { fmt, mealForTime } from '../lib/format';
-import { AmountSheet } from './AmountSheet';
-import type { FoodDto } from '@mea/shared';
-
-interface ProteinSuggestion {
-  food: FoodDto;
-  grams: number;
-  servingId: number | null;
-  servingQty: number | null;
-  proteinG: number;
-  energyKcal: number;
-  fromHistory: boolean;
-}
 
 const ICON: Record<DayAlert['level'], string> = { info: 'ℹ', warning: '⚠', critical: '⛔' };
 
@@ -37,7 +22,7 @@ function isDismissed(date: string, kind: string) {
   }
 }
 
-export function AlertBanners({ totals, settings, date }: { totals: Nutrients; settings: SettingsDto; date: string }) {
+export function AlertBanners({ totals, settings, date, onSuggest }: { totals: Nutrients; settings: SettingsDto; date: string; onSuggest?: () => void }) {
   const now = useNow();
   const [, force] = useState(0);
   const alerts = computeAlerts(totals, settings, date, now).filter((a) => !isDismissed(date, a.kind));
@@ -62,7 +47,11 @@ export function AlertBanners({ totals, settings, date }: { totals: Nutrients; se
           <div className="grow">
             <strong>{a.title}</strong>
             <div className="small muted">{a.message}</div>
-            {a.kind === 'protein_nudge' && <ProteinSuggestions date={date} />}
+            {a.kind === 'protein_nudge' && onSuggest && (
+              <button className="btn btn-block" style={{ marginTop: 8, minHeight: 44 }} onClick={onSuggest}>
+                What can I eat?
+              </button>
+            )}
           </div>
           <button className="btn btn-ghost btn-icon alert-close" aria-label={`Dismiss "${a.title}" for today`} onClick={() => dismiss(a.kind)}>
             ×
@@ -70,41 +59,5 @@ export function AlertBanners({ totals, settings, date }: { totals: Nutrients; se
         </div>
       ))}
     </div>
-  );
-}
-
-function ProteinSuggestions({ date }: { date: string }) {
-  const { data } = useQuery({ queryKey: ['suggestions', 'protein'], queryFn: () => api.get<ProteinSuggestion[]>('/suggestions/protein?limit=3'), staleTime: 5 * 60_000 });
-  const [picked, setPicked] = useState<ProteinSuggestion | null>(null);
-  if (!data?.length) return null;
-  return (
-    <>
-      <div className="small" style={{ marginTop: 8 }}>
-        {data.some((s) => s.fromHistory) ? 'Foods you often eat that are high in protein:' : 'High-protein ideas (tap to add):'}
-      </div>
-      <ul className="list">
-        {data.map((s) => (
-          <li key={s.food.id}>
-            <button className="list-item" style={{ minHeight: 44, padding: '4px 0' }} onClick={() => setPicked(s)} aria-label={`Add ${fmt(s.grams)} g ${s.food.name}, ${fmt(s.proteinG)} g protein`}>
-              <span className="grow ellipsis small">{s.food.name}</span>
-              <span className="small muted num" style={{ flex: 'none' }}>
-                {fmt(s.grams)} g · {fmt(s.proteinG)} g P
-              </span>
-              <span style={{ color: 'var(--accent)', fontWeight: 700, flex: 'none' }} aria-hidden>
-                ＋
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-      <AmountSheet
-        open={!!picked}
-        onClose={() => setPicked(null)}
-        date={date}
-        food={picked?.food}
-        meal={mealForTime()}
-        initialAmount={picked ? { grams: picked.grams, servingId: picked.servingId, servingQty: picked.servingQty } : undefined}
-      />
-    </>
   );
 }

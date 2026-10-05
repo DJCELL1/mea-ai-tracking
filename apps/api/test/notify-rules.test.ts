@@ -45,10 +45,10 @@ describe('dueNotifications', () => {
     expect(dueNotifications(at('12:00'), s, D, fast, n({ proteinG: 100 }))).toEqual([]);
   });
 
-  it('nudges for protein with an idea, but not late at night', () => {
-    const due = dueNotifications(at('15:05'), s, D, w, n({ proteinG: 30 }), '150 g Chicken breast (45 g protein)');
+  it('nudges for protein without suggesting foods, and not late at night', () => {
+    const due = dueNotifications(at('15:05'), s, D, w, n({ proteinG: 30 }));
     expect(due.map((d) => d.kind)).toEqual(['protein_nudge']);
-    expect(due[0].body).toMatch(/Try 150 g Chicken breast/);
+    expect(due[0].body).not.toMatch(/Try/);
     expect(kinds(at('22:30'), n({ proteinG: 30 }))).toEqual([]);
   });
 
@@ -67,3 +67,16 @@ describe('VAPID subject', () => {
     expect(normaliseSubject('https://example.com')).toBe('https://example.com');
   });
 });
+
+describe('window closing with protein still to go', () => {
+  it('says how much protein is left, without suggesting foods', () => {
+    const [n] = dueNotifications(at('19:40'), s, D, w, n2({ proteinG: 100 }));
+    expect(n).toMatchObject({ kind: 'window_closing', url: '/' });
+    expect(n.body).toBe('You still need 50 g protein before 8:00 pm.');
+    const [done] = dueNotifications(at('19:40'), s, D, w, n2({ proteinG: 149 }));
+    expect(done).toMatchObject({ url: '/', body: 'Last chance to eat before 8:00 pm.' });
+  });
+});
+function n2(p: Partial<Nutrients>) {
+  return { ...emptyNutrients(), ...p };
+}

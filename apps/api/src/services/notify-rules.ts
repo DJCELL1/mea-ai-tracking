@@ -25,7 +25,6 @@ export function dueNotifications(
   today: string,
   window: EatingWindow,
   totals: Nutrients,
-  proteinIdea?: string,
 ): DueNotification[] {
   const out: DueNotification[] = [];
   const t = now.getTime();
@@ -39,7 +38,12 @@ export function dueNotifications(
     }
     if (s.notifyWindowClosing && warnMs > 0 && t >= end - warnMs && t < end) {
       const mins = Math.max(1, Math.round((end - t) / 60_000));
-      out.push({ kind: 'window_closing', title: `Eating window closes in ${mins} min`, body: `Last chance to eat before ${clock(window.end, s.timezone)}.`, url: '/' });
+      const proteinLeft = Math.round(s.proteinGTarget - (totals.proteinG ?? 0));
+      const body =
+        proteinLeft >= 5
+          ? `You still need ${proteinLeft} g protein before ${clock(window.end, s.timezone)}.`
+          : `Last chance to eat before ${clock(window.end, s.timezone)}.`;
+      out.push({ kind: 'window_closing', title: `Eating window closes in ${mins} min`, body, url: '/' });
     }
     if (s.notifyWindowClosed && t >= end && t < end + GRACE_MS) {
       out.push({ kind: 'window_closed', title: 'Eating window closed', body: 'Fasting has started. Nice work.', url: '/fasting' });
@@ -49,7 +53,7 @@ export function dueNotifications(
   for (const a of computeAlerts(totals, s, today, now)) {
     if (a.kind === 'protein_nudge') {
       if (s.notifyProtein && localTime(now, s.timezone) < QUIET_FROM) {
-        out.push({ kind: a.kind, title: a.title, body: proteinIdea ? `${a.message} Try ${proteinIdea}.` : a.message, url: '/' });
+        out.push({ kind: a.kind, title: a.title, body: a.message, url: '/' });
       }
     } else if (a.kind !== 'protein_over' && s.notifyTargets) {
       out.push({ kind: a.kind, title: a.title, body: a.message, url: '/' });

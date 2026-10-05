@@ -7,6 +7,7 @@ import { addDays, localDate } from '@mea/shared';
 import { badRequest } from '../http.js';
 import { refreshOutsideWindow } from '../services/fasting.js';
 import { getSettings, updateSettings } from '../services/settings.js';
+import { fillSuggestions } from '../services/fill.js';
 import { proteinSuggestions } from '../services/suggestions.js';
 
 const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'must be a time HH:MM');
@@ -60,6 +61,11 @@ export function settingsRouter(db: Db) {
   r.get('/suggestions/protein', async (req, res) => {
     const { limit } = z.object({ limit: z.coerce.number().int().min(1).max(10).default(5) }).parse(req.query);
     res.json(await proteinSuggestions(db, uid(req), limit));
+  });
+
+  /** "What can I eat?": portions that cover today's protein gap within the kcal left. */
+  r.get('/suggestions/fill', async (req, res) => {
+    res.json(await fillSuggestions(db, uid(req)));
   });
 
   return r;

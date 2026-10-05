@@ -38,3 +38,22 @@ describe.skipIf(!TEST_DB)('settings and protein suggestions', () => {
     expect(res.find((s) => s.food.id === apple)).toBeUndefined();
   });
 });
+
+describe.skipIf(!TEST_DB)('what can I eat?', () => {
+  let ctx: Awaited<ReturnType<typeof setupApp>>;
+  beforeAll(async () => {
+    ctx = await setupApp();
+  });
+  afterAll(() => ctx.pool.end());
+
+  it('suggests portions to cover the protein gap today', async () => {
+    const { localDate } = await import('@mea/shared');
+    const today = localDate(new Date(), 'Australia/Sydney');
+    const chicken = await foodId(ctx.db, 'Chicken, breast, lean, grilled');
+    await ctx.agent.post('/api/log').set(ctx.H).send({ date: today, meal: 'lunch', foodId: chicken, grams: 150 }).expect(201);
+    const res = (await ctx.agent.get('/api/suggestions/fill').expect(200)).body;
+    expect(res).toMatchObject({ date: today, proteinLeftG: 103.5, kcalLeft: 2000 - 243 });
+    expect(res.options[0]).toMatchObject({ food: { name: 'Chicken, breast, lean, grilled' }, fromHistory: true, fitsKcal: true, grams: 300 });
+    expect(typeof res.windowOpen).toBe('boolean');
+  });
+});

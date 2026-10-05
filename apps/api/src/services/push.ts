@@ -8,7 +8,6 @@ import { overridesBetween } from './fasting.js';
 import { dayLog } from './log.js';
 import { dueNotifications } from './notify-rules.js';
 import { getSettings } from './settings.js';
-import { proteinSuggestions } from './suggestions.js';
 
 export interface PushPayload {
   title: string;
@@ -96,14 +95,7 @@ export async function runNotificationTick(db: Db, now = new Date()) {
     const [override] = await overridesBetween(db, userId, today, today);
     const window = windowFor(today, s, override);
     const day = await dayLog(db, userId, today);
-    // Only look up a protein idea when the nudge could fire
-    let idea: string | undefined;
-    const due = dueNotifications(now, s, today, window, day.totals);
-    if (due.some((d) => d.kind === 'protein_nudge')) {
-      const [top] = await proteinSuggestions(db, userId, 1);
-      if (top) idea = `${Math.round(top.grams)} g ${top.food.name.split(',').slice(0, 2).join(',')} (${Math.round(top.proteinG)} g protein)`;
-    }
-    for (const n of idea ? dueNotifications(now, s, today, window, day.totals, idea) : due) {
+    for (const n of dueNotifications(now, s, today, window, day.totals)) {
       if (await claim(db, userId, n.kind, today)) total += await sendToUser(db, userId, { title: n.title, body: n.body, url: n.url, tag: n.kind });
     }
   }
