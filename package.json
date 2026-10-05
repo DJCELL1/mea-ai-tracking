@@ -1,0 +1,16 @@
+{
+  "name": "mea-ai-tracking",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*", "apps/*"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "npm run build -w @mea/shared && npm run build -w @mea/api",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "db:generate": "npm run db:generate -w @mea/api",
+    "db:migrate": "npm run db:migrate -w @mea/api",
+    "import:foods": "npm run import:foods -w @mea/api --",
+    "create-user": "npm run create-user -w @mea/api --"
+  }
+}

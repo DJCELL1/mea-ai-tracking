@@ -1,7 +1,12 @@
-__pycache__/
-*.pyc
-.venv/
-*.egg-info/
-.pytest_cache/
+node_modules/
 dist/
-build/
+.env
+.env.*
+!.env.example
+coverage/
+*.log
+.DS_Store
+
+# Drop food database files here; they are not committed
+data/*
+!data/README.md
